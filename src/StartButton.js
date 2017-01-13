@@ -120,10 +120,10 @@ export default class extends React.Component {
 }//end class
 
 var styles = StyleSheet.create({
-    container:{flexDirection: "column",flex:1,borderColor:"#00ff00",borderWidth:3},
-	title:{flex:0.2,backgroundColor:"#e6684b",justifyContent: "center",alignItems: "center",borderColor:"#ff0000",borderWidth:3},
+    container:{flexDirection: "column",flex:1},
+	title:{flex:0.1,backgroundColor:"#e6684b",justifyContent: "center",alignItems: "center"},
 	context:{color:"black",fontSize:20,justifyContent: "center",alignItems: "center",textAlign: "center"},
-	photo:{flex:0.8,justifyContent: "center",alignItems: "center",borderColor:"#0000ff",borderWidth:3},
+	photo:{flex:0.9,justifyContent: "center",alignItems: "center"},
 	arrow:{width: 20,height: 20,resizeMode: Image.resizeMode.contain},
 	button:{width: 125,	height: 125,resizeMode: Image.resizeMode.contain}
 });

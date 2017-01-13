@@ -30,9 +30,9 @@ const nearRangRSSI = -100;
 //藍芽偵測頻率(s)
 const bluetoothScanFrequency = 1.5;
 //加速器偵測頻率(ms)
-const acceleratorDetectionFrequency = 2000;
+const acceleratorDetectionFrequency = 1000;
 //水平角度誤差(越大越遲鈍)
-const angleAccuracy = 5;
+const angleAccuracy = 7;
 //重力加速度
 const gravityAcceleration = 9;
 //斷線誤差(s)
@@ -42,7 +42,7 @@ const FPS = 1000;
 //偵測次數重設間隔(s)
 const LITI_RESET_COUNT = 5;
 //震動間隔(s)
-const LITI_VIBRATE = 1;
+const LITI_VIBRATE = 5;
 
 
 
@@ -57,9 +57,9 @@ const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
 //Ibeacons的基本資訊 Array
 //Index_0=Major,Index_1=minor,Index_2=VideoUri,Index_3=偵測次數
 const iBInfo = [
-	[17815,2484,'-z9dZDDbCSQ',0],
-	[61577,38355,'_mkiGMtbrPM',0],
-	[41778,42019,'xwg2Hpf4ta8',0]
+	[17815,2484,'2x5XUlLbvn8',0],
+	[61577,38355,'T5i-MDRfEYI',0],
+	[41778,42019,'8yOvsVQKJMs',0]
 ];
 
 
@@ -103,8 +103,9 @@ export default class MainFunction extends Component {
 		  quality: null,
 		  error: null,
 		  paused: false,
-		  VideoId: null,
-		  apikey: myYoutubeAPIKey
+		  VideoId: '',
+		  apikey: myYoutubeAPIKey,
+		  playEndedFlag: false,
 		};
 
 		//FPS(ms)觸發一次，mainFlowControl()
@@ -141,6 +142,8 @@ export default class MainFunction extends Component {
 				.catch(error => 
 					console.log(`Beacons ranging not stoped, error: ${error}`)
 			);*/
+			
+			clearInterval(this.Timer);
 			
 			//離開程式
 			BackAndroid.exitApp();
@@ -345,8 +348,11 @@ export default class MainFunction extends Component {
 							this.setState({VideoId:iBInfo[i][2]});
 							
 							//附近有可以辨識的IBeacons
-							this.setState({haveIB: true});
-							
+							this.setState({haveIB: true, playEndedFlag: false});
+	
+							//有影片可以撥放時可以觀看，提醒使用者
+							Vibration.vibrate();
+
 							//console.warn("VideoID="+this.state.VideoId);
 							
 						}//end if
@@ -354,8 +360,14 @@ export default class MainFunction extends Component {
 				}else{
 					//console.warn("一樣的VideoID="+this.state.VideoId);
 					
-					//附近有可以辨識的IBeacons
-					this.setState({haveIB: true});
+					//已撥放完影片，則不可再次撥放，需離開範圍在進入
+					if(!this.state.playEndedFlag){
+						
+						//附近有可以辨識的IBeacons
+						this.setState({haveIB: true});
+						
+					}//end if
+					
 				}//end if
 			}//end if
 			
@@ -396,15 +408,19 @@ export default class MainFunction extends Component {
 			//console.warn("撥放影片:"+this.state.VideoId+", paused="+this.state.paused);
 				
 		}else if( flagConnect && !levelFlag && (VideoId =! null)){
-				
+			//console.warn("暫停播放");
+			
+			this.setState({paused:true, STATUS:false});
+		
 			//震動間隔
+			/*
 			if((resetDectCountCount % LITI_VIBRATE) == 0){
 	
 				//有影片可以撥放時可以觀看，提醒使用者
 				Vibration.vibrate();
-				this.setState({paused:true, STATUS:false});
-				//console.warn("震動");
+				
 			}//end if
+			*/
 				
 		}else if( !flagConnect ){
 				
@@ -510,18 +526,37 @@ export default class MainFunction extends Component {
 	
 	//渲染畫面	
 	render() {
+	
+		
+	
 		return (
-			<YouTube
-				videoId={ this.state.VideoId }
-				play={ !this.state.paused }
-				hidden={ true }
-				playsInline={ false }
-				controls={ 0 }
-				loop={ true }
-				apiKey={ myYoutubeAPIKey }
-				style={ styles.video }
-			/>
-				
+			<View style={styles.fullScreen}>
+			
+				<Image source={Radar} style={ this.state.paused ? styles.radar_show : styles.radar_hide } />
+		
+				<YouTube
+					videoId={ this.state.VideoId }
+					play={ !this.state.paused }
+					hidden={ true }
+					playsInline={ true }
+					controls={ 0 }
+					loop={ false }
+					apiKey={ myYoutubeAPIKey }
+					style={ this.state.paused ? styles.video_paused : styles.video_play }
+					onChangeState={ (e) => { 
+						//播放完畢時，暫停撥放
+						if(e.nativeEvent.state == 'ended'){
+							
+							//讓目前IBeacon斷線
+							this.setState({paused: false, haveIB: false, playEndedFlag: true});
+						}
+						
+					}}
+					
+					
+				/>
+			
+			</View>
 		);
 	}//end render()	
 	
@@ -536,6 +571,15 @@ export default class MainFunction extends Component {
 
 
 
+//取得裝置螢幕大小
+var {
+  height: deviceHeight,
+  width: deviceWidth
+} = Dimensions.get("window");
+
+
+
+
 
 const styles = StyleSheet.create({
 	fullScreen: {
@@ -544,13 +588,27 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		alignItems: "center",
 	},
-	video:{
-		flex:1,
-		backgroundColor: '#ffffff',
+	video_play:{
+		width: deviceHeight,
+		height: deviceWidth,
 	},
-	radar:{
+	video_paused:{
+		
+	},
+	radar_show:{
+		flex:1,
 		width: 200,
 		height: 200,
+		resizeMode: 'contain',
+	},
+	radar_hide:{
+		position: "absolute",
+        top:0,
+        bottom:0,
+        left:0,
+        right:0,
+		width: 0,
+		height: 0,
 		resizeMode: 'contain',
 	},
 });
@@ -560,10 +618,6 @@ const styles = StyleSheet.create({
 
 
 
-//取得裝置螢幕大小
-var {
-  height: deviceHeight,
-  width: deviceWidth
-} = Dimensions.get("window");
+
 
 
