@@ -55,12 +55,14 @@ import Radar from '../drawable/radar.gif';
 const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
 
 //Ibeacons的基本資訊 Array
-//Index_0=Major,Index_1=minor,Index_2=VideoUri,Index_3=偵測次數
+//Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=偵測次數, Index_4=是否被看過
+const MAJOR = 0,MINOR = 1, VIDEOID = 2, DECTCOUNT = 3, VIEWED = 4;
 const iBInfo = [
-	[17815,2484,'2x5XUlLbvn8',0],
-	[61577,38355,'T5i-MDRfEYI',0],
-	[41778,42019,'8yOvsVQKJMs',0]
+	[17815,2484,'2x5XUlLbvn8',0,false],
+	[61577,38355,'T5i-MDRfEYI',0,false],
+	[41778,42019,'8yOvsVQKJMs',0,false]
 ];
+const iBinfoLeng = iBInfo.length;//降低存取次數
 
 
 
@@ -96,6 +98,9 @@ export default class MainFunction extends Component {
 		  
 		  //重設偵測次數計數器
 		  resetDectCountCount:0,
+
+		  //紀錄已撥放的影片數量
+		  VideoISViewed: 0,
 		  
 		  //影片播放器參數
 		  isReady: null,
@@ -123,6 +128,7 @@ export default class MainFunction extends Component {
 		this.mainFlowControl = this.mainFlowControl.bind(this);
 		this.MaxCountIBeacons = this.MaxCountIBeacons.bind(this);
 		this.ResetBeaconCount = this.ResetBeaconCount.bind(this);
+		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
 		
 		//
 		BackAndroid.addEventListener('hardwareBackPress', function() {
@@ -278,28 +284,23 @@ export default class MainFunction extends Component {
 		//var nearRangRSSI = this.state.nearRangRSSI;
 		
 		//讀取抓取的ibeaconData
-		for (var i = 0; i < beacons.length ; i++)
+		BeaLength = beacons.length;//降低存取次數
+		for (var i = 0; i < BeaLength ; i++)
 		{
 			//要到一定距離才計算偵測次數
 			if(beacons[i].rssi >= nearRangRSSI){
-				
 				//偵測次數++
-				for(var k=0;k<iBInfo.length;k++){
-					if((beacons[i].major == iBInfo[k][0]) && (beacons[i].minor == iBInfo[k][1])){
-						iBInfo[k][3]++;
+				for(var k=0;k<iBInfoLeng;k++){
+					if((beacons[i].major == iBInfo[k][MAJOR]) && (beacons[i].minor == iBInfo[k][MINOR])){
+						iBInfo[k][DECTCOUNT]++;
 						//console.warn(beacons[i].major + "'s Count = " + iBInfo[k][3]);
 					}//end if
-					
-				}//end for
-				
+				}//end for		
 			}else{
 				//console.warn(beacons[i].major + "'s RSSI = " + beacons[i].rssi);
 			}//end if
-			
 		}//end for
-		
 		//console.warn("計數iBecons偵測次數");
-		
 	}//end coutDectIBeacons()
 	
 	
@@ -342,10 +343,10 @@ export default class MainFunction extends Component {
 					
 						//console.warn("iBInfo["+i+"][0]:"+iBInfo[i][0]+",iBInfo["+i+"][1]:"+iBInfo[i][1]);
 						
-						if((new_closeMajor == iBInfo[i][0]) && (new_closeMinor == iBInfo[i][1])){
+						if((new_closeMajor == iBInfo[i][MAJOR]) && (new_closeMinor == iBInfo[i][MINOR])){
 							
 							//設定Uri
-							this.setState({VideoId:iBInfo[i][2]});
+							this.setState({VideoId:iBInfo[i][VIDEOID]});
 							
 							//附近有可以辨識的IBeacons
 							this.setState({haveIB: true, playEndedFlag: false});
@@ -492,10 +493,10 @@ export default class MainFunction extends Component {
 		var closeMinor=null;
 		
 		for(var i=0;i<iBInfo.length;i++){
-			if((iBInfo[i][3] != 0) && (iBInfo[i][3] > count)){
-				count = iBInfo[i][3];
-				closeMajor = iBInfo[i][0];
-				closeMinor = iBInfo[i][1];
+			if((iBInfo[i][DECTCOUNT] != 0) && (iBInfo[i][DECTCOUNT] > count)){
+				count = iBInfo[i][DECTCOUNT];
+				closeMajor = iBInfo[i][MAJOR];
+				closeMinor = iBInfo[i][MINOR];
 			}
 		}//end for
 		
@@ -514,11 +515,35 @@ export default class MainFunction extends Component {
 	ResetBeaconCount(){
 		
 		for(var i=0;i<iBInfo.length;i++){
-			iBInfo[i][3] = 0;
+			iBInfo[i][DECTCOUNT] = 0;
 		}//end for
 		//console.warn("IBeacon計數紀錄清除完成");
 		
 	}//end ResetBeaconCount
+
+
+
+
+
+	//紀錄已撥放的影片數量
+	RecodViewedNumber(){
+		
+		//連結state
+		NowVideoID = this.state.VideoId;
+
+		//搜尋
+		for(let i=0;i<iBinfoLeng;i++){
+			//找到ID and 沒有被看過
+			if(iBInfo[i][VIDEOID]==NowVideoID && iBInfo[i][VIEWED]==false){
+
+				//已看過影片數量+1
+				this.setState({VideoISViewed: this.state.VideoISViewed + 1});
+
+				break;
+			}
+		}//end for
+
+	}//end RecodViewedNumber
 	
 	
 	
@@ -526,13 +551,18 @@ export default class MainFunction extends Component {
 	
 	//渲染畫面	
 	render() {
-	
-		
-	
 		return (
 			<View style={styles.fullScreen}>
 			
 				<Image source={Radar} style={ this.state.paused ? styles.radar_show : styles.radar_hide } />
+
+				<Text style={ this.state.paused ? styles.search_hit_show : styles.search_hit_hide }>
+					探索中
+				</Text>
+
+				<Text style={ this.state.paused ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
+					{"已導覽: " + this.state.VideoISViewed + "/" + iBinfoLeng } 
+				</Text>
 		
 				<YouTube
 					videoId={ this.state.VideoId }
@@ -549,11 +579,12 @@ export default class MainFunction extends Component {
 							
 							//讓目前IBeacon斷線
 							this.setState({paused: false, haveIB: false, playEndedFlag: true});
+
+							//紀錄已撥放的影片數量
+							this.RecodViewedNumber();
 						}
 						
 					}}
-					
-					
 				/>
 			
 			</View>
@@ -584,7 +615,7 @@ var {
 const styles = StyleSheet.create({
 	fullScreen: {
 		flex:1,
-		backgroundColor: '#ffffff',
+		backgroundColor: '#000000',
 		justifyContent: "center",
 		alignItems: "center",
 	},
@@ -610,6 +641,23 @@ const styles = StyleSheet.create({
 		width: 0,
 		height: 0,
 		resizeMode: 'contain',
+	},
+	search_hit_show:{
+		fontSize: 25,
+	},
+	search_hit_hide:{
+		fontSize: 0,
+	},
+	viewed_hit_show:{
+		position: "absolute",
+        top:0,
+        bottom:0,
+        left:0,
+        right:0,
+		fontSize: 20,
+	},
+	viewed_hit_hide:{
+		fontSize: 0,
 	},
 });
 

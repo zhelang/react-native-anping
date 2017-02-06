@@ -104,8 +104,9 @@ export default class extends React.Component {
 				<View style={styles.photo}>
 				
 					<Text style={styles.context}>
-						按下按鈕{'\n'}
-						開始安平海關AR導覽！
+						按下按鈕後{'\n'}
+						請將手機放置"AR望眼鏡"中{'\n'}
+						將開始安平海關導覽！
 					</Text>
 					<Image source={Arrow} style={styles.arrow} />
 					<TouchableWithoutFeedback  onPress={this.start_scanning} onPressIn={this.play_pressing}>
