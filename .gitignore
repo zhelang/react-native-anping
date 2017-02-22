@@ -43,3 +43,4 @@ android/app/libs
 
 # Other
 *.bat
+*.jks#Android APK Key File

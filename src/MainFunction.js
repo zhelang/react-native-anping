@@ -1,7 +1,7 @@
-//主要功能：
+//此page主要功能：
 //1.iBeacon偵測距離
 //2.震動 提醒指定距離到了
-//3.陀螺儀 偵測 水平
+//3.加速器偵測水平時，才可以播放影片；否則震動提示
 //4.水平時且距離近，則顯示影片
 
 
@@ -26,21 +26,21 @@ import YouTube from 'react-native-youtube';
 
 
 //近的距離(dbm)
-const nearRangRSSI = -100;
+const nearRangRSSI = -80;
 //藍芽偵測頻率(s)
-const bluetoothScanFrequency = 1.5;
+const bluetoothScanFrequency = 2;
 //加速器偵測頻率(ms)
-const acceleratorDetectionFrequency = 1000;
+const acceleratorDetectionFrequency = 1500;
 //水平角度誤差(越大越遲鈍)
-const angleAccuracy = 7;
+const angleAccuracy = 8;
 //重力加速度
 const gravityAcceleration = 9;
 //斷線誤差(s)
-const disconnectValue = 1;
-//掃描間隔(ms)
+const disconnectValue = 2;
+//程式迴圈間隔(ms)
 const FPS = 1000;
-//偵測次數重設間隔(s)
-const LITI_RESET_COUNT = 5;
+//偵測次數重設間隔(s)，建議至少大於iBeacons發送訊號時間的兩倍(Interval: 2588ms)
+const LITI_RESET_COUNT = 10;
 //震動間隔(s)
 const LITI_VIBRATE = 5;
 
@@ -58,11 +58,16 @@ const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
 //Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=偵測次數, Index_4=是否被看過
 const MAJOR = 0,MINOR = 1, VIDEOID = 2, DECTCOUNT = 3, VIEWED = 4;
 const iBInfo = [
-	[17815,2484,'2x5XUlLbvn8',0,false],
-	[61577,38355,'T5i-MDRfEYI',0,false],
-	[41778,42019,'8yOvsVQKJMs',0,false]
+	[10001,1000,'2x5XUlLbvn8',0,false],
+	[10001,1001,'T5i-MDRfEYI',0,false],
+	[10001,1002,'8yOvsVQKJMs',0,false],
+	[10001,1003,'s-m_9RmUNNU',0,false],
+	[10001,1004,'sMyHnZ4lV54',0,false],
+	[10001,1005,'oleKA8j841w',0,false],
+	[10001,1006,'A8NlljMtsIY',0,false],
+	[10001,1007,'4cjrYBj81Ko',0,false],
 ];
-const iBinfoLeng = iBInfo.length;//降低存取次數
+const IBEA_LENG = iBInfo.length;//降低存取次數
 
 
 
@@ -290,7 +295,7 @@ export default class MainFunction extends Component {
 			//要到一定距離才計算偵測次數
 			if(beacons[i].rssi >= nearRangRSSI){
 				//偵測次數++
-				for(var k=0;k<iBInfoLeng;k++){
+				for(var k=0;k<IBEA_LENG;k++){
 					if((beacons[i].major == iBInfo[k][MAJOR]) && (beacons[i].minor == iBInfo[k][MINOR])){
 						iBInfo[k][DECTCOUNT]++;
 						//console.warn(beacons[i].major + "'s Count = " + iBInfo[k][3]);
@@ -339,7 +344,7 @@ export default class MainFunction extends Component {
 					//console.warn("closeMajor:"+closeMajor+",closeMinor:"+closeMinor);
 				
 					//配對Major, Minor
-					for(var i=0; i < iBInfo.length ; i++){
+					for(var i=0; i < IBEA_LENG ; i++){
 					
 						//console.warn("iBInfo["+i+"][0]:"+iBInfo[i][0]+",iBInfo["+i+"][1]:"+iBInfo[i][1]);
 						
@@ -492,7 +497,7 @@ export default class MainFunction extends Component {
 		var closeMajor=null;
 		var closeMinor=null;
 		
-		for(var i=0;i<iBInfo.length;i++){
+		for(var i=0;i<IBEA_LENG;i++){
 			if((iBInfo[i][DECTCOUNT] != 0) && (iBInfo[i][DECTCOUNT] > count)){
 				count = iBInfo[i][DECTCOUNT];
 				closeMajor = iBInfo[i][MAJOR];
@@ -514,7 +519,7 @@ export default class MainFunction extends Component {
 	//Reset偵測次數
 	ResetBeaconCount(){
 		
-		for(var i=0;i<iBInfo.length;i++){
+		for(var i=0;i<IBEA_LENG;i++){
 			iBInfo[i][DECTCOUNT] = 0;
 		}//end for
 		//console.warn("IBeacon計數紀錄清除完成");
@@ -532,12 +537,15 @@ export default class MainFunction extends Component {
 		NowVideoID = this.state.VideoId;
 
 		//搜尋
-		for(let i=0;i<iBinfoLeng;i++){
+		for(let i=0;i<IBEA_LENG;i++){
 			//找到ID and 沒有被看過
 			if(iBInfo[i][VIDEOID]==NowVideoID && iBInfo[i][VIEWED]==false){
 
 				//已看過影片數量+1
-				this.setState({VideoISViewed: this.state.VideoISViewed + 1});
+				this.setState({VideoISViewed: this.state.VideoISViewed += 1 });
+
+				//紀錄已看過
+				iBInfo[i][VIEWED] = true;
 
 				break;
 			}
@@ -556,12 +564,16 @@ export default class MainFunction extends Component {
 			
 				<Image source={Radar} style={ this.state.paused ? styles.radar_show : styles.radar_hide } />
 
-				<Text style={ this.state.paused ? styles.search_hit_show : styles.search_hit_hide }>
+				<Text style={ (!this.state.flagConnect && this.state.paused) ? styles.search_hit_show : styles.search_hit_hide }>
 					探索中
+				</Text>
+				
+				<Text style={ (this.state.flagConnect && this.state.paused) ? styles.search_hit_show : styles.search_hit_hide }>
+					暫停中(請水平觀看)
 				</Text>
 
 				<Text style={ this.state.paused ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
-					{"已導覽: " + this.state.VideoISViewed + "/" + iBinfoLeng } 
+					{"已導覽: " + this.state.VideoISViewed + "/" + IBEA_LENG } 
 				</Text>
 		
 				<YouTube
