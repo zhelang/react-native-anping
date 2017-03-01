@@ -139,6 +139,8 @@ android {
 }
 
 dependencies {
+	compile project(":react-native-screen-brightness")
+    compile project(':react-native-sound')
 	compile project(':RCTYouTube')
     compile project(':react-native-sensor-manager')
     compile project(':react-native-beacons-android')

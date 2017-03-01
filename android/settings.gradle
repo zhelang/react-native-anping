@@ -1,11 +1,14 @@
 rootProject.name = 'Anping'
+include ':react-native-sound'
+project(':react-native-sound').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sound/android')
 include ':react-native-beacons-android'
 project(':react-native-beacons-android').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-beacons-android/android')
 include ':react-native-bluetooth-serial'
 project(':react-native-bluetooth-serial').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-bluetooth-serial/android')
-
 include ':app'
 include ':react-native-sensor-manager'
 project(':react-native-sensor-manager').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sensor-manager/android')
 include ':RCTYouTube', ':app'
 project(':RCTYouTube').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-youtube/RCTYouTube')
+include ':react-native-screen-brightness'
+project(':react-native-screen-brightness').projectDir = new File(settingsDir, '../node_modules/react-native-screen-brightness/android')

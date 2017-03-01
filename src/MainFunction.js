@@ -9,7 +9,7 @@
 
 
 import React, {Component}  from 'react';
-import {StyleSheet,Text,View,DeviceEventEmitter,Vibration,BackAndroid,TouchableOpacity,Image,Dimensions} from 'react-native';
+import {StyleSheet,Text,View,DeviceEventEmitter,Vibration,BackAndroid,TouchableOpacity,Image,Dimensions,AsyncStorage,NativeModules} from 'react-native';
 //ibeacons API引用
 import Beacons from 'react-native-beacons-android';
 //藍芽串流 API引用
@@ -18,58 +18,61 @@ import BluetoothSerial from 'react-native-bluetooth-serial';
 var mSensorManager = require('NativeModules').SensorManager;
 //Youtube API
 import YouTube from 'react-native-youtube';
-
-
-
+//Sound API
+import Sound from 'react-native-sound';
+//Storage API
+import Storage from 'react-native-storage';
+//ScreenBrightness API
+const { ScreenBrightness } = NativeModules;
 
 
 
 
 //近的距離(dbm)
-const nearRangRSSI = -80;
+const nearRangRSSI = -75;
 //藍芽偵測頻率(s)
 const bluetoothScanFrequency = 2;
 //加速器偵測頻率(ms)
-const acceleratorDetectionFrequency = 1500;
+const acceleratorDetectionFrequency = 2000;
 //水平角度誤差(越大越遲鈍)
-const angleAccuracy = 8;
+const angleAccuracy = 9;
 //重力加速度
-const gravityAcceleration = 9;
+const gravityAcceleration = 9.8;
 //斷線誤差(s)
-const disconnectValue = 2;
+const disconnectValue = 3;
 //程式迴圈間隔(ms)
 const FPS = 1000;
 //偵測次數重設間隔(s)，建議至少大於iBeacons發送訊號時間的兩倍(Interval: 2588ms)
-const LITI_RESET_COUNT = 10;
+const LITI_RESET_COUNT = 8;
 //震動間隔(s)
-const LITI_VIBRATE = 5;
-
-
+const LITI_VIBRATE = 2;
 
 
 
 //雷達圖片
 import Radar from '../drawable/radar.gif';
-
+//音效位置
+const requireAudio = 'hit_sound.mp3';
 //Youtube API Key
 const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
-
 //Ibeacons的基本資訊 Array
 //Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=偵測次數, Index_4=是否被看過
 const MAJOR = 0,MINOR = 1, VIDEOID = 2, DECTCOUNT = 3, VIEWED = 4;
-const iBInfo = [
-	[10001,1000,'2x5XUlLbvn8',0,false],
-	[10001,1001,'T5i-MDRfEYI',0,false],
-	[10001,1002,'8yOvsVQKJMs',0,false],
-	[10001,1003,'s-m_9RmUNNU',0,false],
-	[10001,1004,'sMyHnZ4lV54',0,false],
-	[10001,1005,'oleKA8j841w',0,false],
-	[10001,1006,'A8NlljMtsIY',0,false],
-	[10001,1007,'4cjrYBj81Ko',0,false],
-];
-const IBEA_LENG = iBInfo.length;//降低存取次數
-
-
+var iBInfo = [
+		[10001,1000,'2x5XUlLbvn8',0,false],
+		[10001,1001,'T5i-MDRfEYI',0,false],
+		[10001,1002,'8yOvsVQKJMs',0,false],
+		[10001,1003,'s-m_9RmUNNU',0,false],
+		[10001,1004,'sMyHnZ4lV54',0,false],
+		[10001,1005,'oleKA8j841w',0,false],
+		[10001,1006,'A8NlljMtsIY',0,false],
+		[10001,1007,'4cjrYBj81Ko',0,false],
+		[61577,38355,'4cjrYBj81Ko',0,false],
+	];
+//紀錄陣列大小
+const IBEACON_LENG = iBInfo.length;
+const KEY='ibeacon';
+var storage;
 
 
 
@@ -78,7 +81,10 @@ export default class MainFunction extends Component {
 		super(props);
 		this.state = {
 			
-		  //IBeacon 資料儲放陣列
+		  //原始螢幕亮度
+		  initScreenBrithness: 0.5,
+			
+		  //IBeacon 資料存放陣列
 		  beacons:[],
 		  
 		  //最近的IBeaon資訊
@@ -117,14 +123,84 @@ export default class MainFunction extends Component {
 		  apikey: myYoutubeAPIKey,
 		  playEndedFlag: false,
 		};
-
-		//FPS(ms)觸發一次，mainFlowControl()
-		this.Timer = setInterval(() => { 
-				//進入流程控制
-				this.mainFlowControl(); 
-		}, FPS);
 		
-		//JavaScript SE6 添加function到此class
+		//初始化儲存資料
+		storage = new Storage({
+			size: IBEACON_LENG+1,
+			storageBackend: AsyncStorage,//RN使用AsyncStorage
+			defaultExpires: null,
+			enableCache: false,
+			sync:null//可獲取抓網路JSON資料
+		});
+		global.storage = storage;
+		
+		//抓取已閱覽資訊
+		this.GetViewVideoInfo=()=>{
+			for(let i=0;i<IBEACON_LENG;i++){
+				storage.load({
+					key: KEY+i,
+					autoSync:false,//不使用網路抓取JSON
+					syncInBackground: false,
+				})
+				.then(get => {
+					if(get.viewed){
+						iBInfo[i][VIEWED] = true;
+						console.log('iBInfo['+i+'][VIEWED] = ' + iBInfo[i][VIEWED]);
+					}
+				})
+				.catch(err => {
+					console.log('GetViewVideoInfo FAIL: '+err.message);
+				})
+			}//end for
+			
+			storage.load({
+					key: KEY+'NumberOfViewedVideo',
+					autoSync:false,//不使用網路抓取JSON
+					syncInBackground: false,
+				})
+				.then(get => {
+					if(get.number>0){
+						this.setState({VideoISViewed: get.number});
+					}
+				})
+				.catch(err => {
+					console.log('GetViewVideoInfo FAIL: '+err.message);
+				})
+			
+		};
+		this.GetViewVideoInfo();
+		
+		//音效設定
+		this.playSound=()=>{
+			const HitSound = new Sound(requireAudio,Sound.MAIN_BUNDLE,(error)=>{
+				if(error){
+					console.log('error: ',error);
+				}else{
+					HitSound.setSpeed(1);
+					HitSound.play(()=>HitSound.release());
+				}
+			});
+		};
+		
+		//亮度設定
+		this.SetMAXScreenBrightness=()=>{
+			
+			//保存目前亮度
+			ScreenBrightness.getBrightness()
+			.then(brightness=>{
+				//brightness range = 0~255,but api Only accepted 0~1
+				this.setState({initScreenBrithness: brightness/255});
+			}).catch(err=>{
+				console.log('ScreenBrightness.getBrightness FAIL:'+err.message);
+			});
+			
+			//調整最大亮度
+			ScreenBrightness.setBrightness(1);
+			
+		};
+		this.SetMAXScreenBrightness();
+		
+		//JavaScript ES6 添加function到此class
 		this.onAccelerometerUpdate = this.onAccelerometerUpdate.bind(this);
 		this.coutDectIBeacons = this.coutDectIBeacons.bind(this);
 		this.pickVideoId = this.pickVideoId.bind(this);
@@ -135,32 +211,33 @@ export default class MainFunction extends Component {
 		this.ResetBeaconCount = this.ResetBeaconCount.bind(this);
 		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
 		
-		//
-		BackAndroid.addEventListener('hardwareBackPress', function() {
+		//Android 返回鍵
+		BackAndroid.addEventListener('hardwareBackPress', ()=> {
+			
+			//釋放Timer
+			clearInterval(this.Timer);
 			
 			//關閉藍芽
-			/*BluetoothSerial.disable()
-				.then((res) => 
-					console.log("藍芽關閉成功"))
-				.catch((err) => 
-					console.log("藍芽關閉失敗 ${err}")
-			);*/
-			
-			//關閉Randging(測距)，需要過約5秒才會關閉
-			/*Beacons.stopRangingBeaconsInRegion('REGION1')
-				.then(() => 
-					console.log('Beacons ranging stoped succesfully'))
-				.catch(error => 
-					console.log(`Beacons ranging not stoped, error: ${error}`)
-			);*/
-			
-			clearInterval(this.Timer);
+			BluetoothSerial.disable()
+			.then((res) => 
+				console.log("藍芽關閉成功"))
+			.catch((err) => 
+				console.log("藍芽關閉失敗 ${err}"));
+				
+			//復原亮度
+			ScreenBrightness.setBrightness(this.state.initScreenBrithness);
 			
 			//離開程式
 			BackAndroid.exitApp();
+	
 		});
+		
+		//FPS(ms)觸發一次，mainFlowControl()
+		this.Timer = setInterval(() => { 
+				//進入流程控制
+				this.mainFlowControl(); 
+		}, FPS);
 	}//end constructor
-
 	
 	
 	
@@ -190,11 +267,10 @@ export default class MainFunction extends Component {
 		
 		//強制開啟藍芽
 		BluetoothSerial.enable()
-			.then((res) => 
-				console.log("強制開啟藍芽成功"))
-			.catch((err) => 
-				console.log("強制開啟藍芽失敗 ${err}")
-		);
+		.then((res) => 
+			console.log("強制開啟藍芽成功"))
+		.catch((err) => 
+			console.log("強制開啟藍芽失敗 ${err}"));
 		
 		//開始偵測iBeacon
 		Beacons.detectIBeacons();
@@ -295,7 +371,7 @@ export default class MainFunction extends Component {
 			//要到一定距離才計算偵測次數
 			if(beacons[i].rssi >= nearRangRSSI){
 				//偵測次數++
-				for(var k=0;k<IBEA_LENG;k++){
+				for(var k=0;k<IBEACON_LENG;k++){
 					if((beacons[i].major == iBInfo[k][MAJOR]) && (beacons[i].minor == iBInfo[k][MINOR])){
 						iBInfo[k][DECTCOUNT]++;
 						//console.warn(beacons[i].major + "'s Count = " + iBInfo[k][3]);
@@ -344,7 +420,7 @@ export default class MainFunction extends Component {
 					//console.warn("closeMajor:"+closeMajor+",closeMinor:"+closeMinor);
 				
 					//配對Major, Minor
-					for(var i=0; i < IBEA_LENG ; i++){
+					for(var i=0; i < IBEACON_LENG ; i++){
 					
 						//console.warn("iBInfo["+i+"][0]:"+iBInfo[i][0]+",iBInfo["+i+"][1]:"+iBInfo[i][1]);
 						
@@ -357,7 +433,12 @@ export default class MainFunction extends Component {
 							this.setState({haveIB: true, playEndedFlag: false});
 	
 							//有影片可以撥放時可以觀看，提醒使用者
-							Vibration.vibrate();
+							for(let j=0;j<LITI_VIBRATE;j++){
+								Vibration.vibrate();
+							}
+							
+							//播放音效
+							this.playSound();
 
 							//console.warn("VideoID="+this.state.VideoId);
 							
@@ -497,7 +578,7 @@ export default class MainFunction extends Component {
 		var closeMajor=null;
 		var closeMinor=null;
 		
-		for(var i=0;i<IBEA_LENG;i++){
+		for(var i=0;i<IBEACON_LENG;i++){
 			if((iBInfo[i][DECTCOUNT] != 0) && (iBInfo[i][DECTCOUNT] > count)){
 				count = iBInfo[i][DECTCOUNT];
 				closeMajor = iBInfo[i][MAJOR];
@@ -519,7 +600,7 @@ export default class MainFunction extends Component {
 	//Reset偵測次數
 	ResetBeaconCount(){
 		
-		for(var i=0;i<IBEA_LENG;i++){
+		for(var i=0;i<IBEACON_LENG;i++){
 			iBInfo[i][DECTCOUNT] = 0;
 		}//end for
 		//console.warn("IBeacon計數紀錄清除完成");
@@ -537,7 +618,7 @@ export default class MainFunction extends Component {
 		NowVideoID = this.state.VideoId;
 
 		//搜尋
-		for(let i=0;i<IBEA_LENG;i++){
+		for(let i=0;i<IBEACON_LENG;i++){
 			//找到ID and 沒有被看過
 			if(iBInfo[i][VIDEOID]==NowVideoID && iBInfo[i][VIEWED]==false){
 
@@ -546,8 +627,22 @@ export default class MainFunction extends Component {
 
 				//紀錄已看過
 				iBInfo[i][VIEWED] = true;
-
-				break;
+				
+				//儲存瀏覽紀錄
+				storage.save({
+					key: KEY+i,
+					rawData:{
+						viewed: 'true',
+					},
+					expires: null,
+				});
+				storage.save({
+					key: KEY+'NumberOfViewedVideo',
+					rawData: {
+						number: this.state.VideoISViewed,
+					},
+					expires: null,
+				});
 			}
 		}//end for
 
@@ -564,16 +659,8 @@ export default class MainFunction extends Component {
 			
 				<Image source={Radar} style={ this.state.paused ? styles.radar_show : styles.radar_hide } />
 
-				<Text style={ (!this.state.flagConnect && this.state.paused) ? styles.search_hit_show : styles.search_hit_hide }>
-					探索中
-				</Text>
-				
-				<Text style={ (this.state.flagConnect && this.state.paused) ? styles.search_hit_show : styles.search_hit_hide }>
-					暫停中(請水平觀看)
-				</Text>
-
 				<Text style={ this.state.paused ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
-					{"已導覽: " + this.state.VideoISViewed + "/" + IBEA_LENG } 
+					{"已導覽: " + this.state.VideoISViewed + "/" + IBEACON_LENG } 
 				</Text>
 		
 				<YouTube
@@ -586,6 +673,7 @@ export default class MainFunction extends Component {
 					apiKey={ myYoutubeAPIKey }
 					style={ this.state.paused ? styles.video_paused : styles.video_play }
 					onChangeState={ (e) => { 
+					
 						//播放完畢時，暫停撥放
 						if(e.nativeEvent.state == 'ended'){
 							
@@ -654,12 +742,12 @@ const styles = StyleSheet.create({
 		height: 0,
 		resizeMode: 'contain',
 	},
-	search_hit_show:{
+	/*search_hit_show:{
 		fontSize: 25,
 	},
 	search_hit_hide:{
 		fontSize: 0,
-	},
+	},*/
 	viewed_hit_show:{
 		position: "absolute",
         top:0,

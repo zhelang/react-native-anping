@@ -3,9 +3,11 @@ package com.anping_v002;
 import android.app.Application;
 import android.util.Log;
 
+import com.robinpowered.react.ScreenBrightness.ScreenBrightnessPackage;
 import com.sensormanager.SensorManagerPackage;
 import com.inprogress.reactnativeyoutube.ReactNativeYouTube;
 import com.facebook.react.ReactApplication;
+import com.zmxv.RNSound.RNSoundPackage;
 import com.mmazzarolo.beaconsandroid.BeaconsAndroidPackage;
 import com.rusel.RCTBluetoothSerial.RCTBluetoothSerialPackage;
 import com.facebook.react.ReactInstanceManager;
@@ -29,10 +31,12 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RNSoundPackage(),
             new BeaconsAndroidPackage(),
             new RCTBluetoothSerialPackage(),
 			new ReactNativeYouTube(),
-			new SensorManagerPackage()
+			new SensorManagerPackage(),
+			new ScreenBrightnessPackage(1000)
       );
     }
   };
