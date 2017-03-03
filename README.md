@@ -39,4 +39,4 @@
 
 ---
  
-*copyright by [ZheLang](https://github.com/zhelang)*
+*by [ZheLang](https://github.com/zhelang)*
