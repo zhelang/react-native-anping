@@ -19,7 +19,7 @@
  Mobile Operating System: Android 6.0
  
 ##API list
- 1.react-native-beacons-android (IBEACONS control)
+ 1.[react-native-beacons-android](https://github.com/mmazzarolo/react-native-beacons-android) (IBEACONS control)
  
  2.react-native-bluetooth-serial (Automatically open the bluetooth)
  
