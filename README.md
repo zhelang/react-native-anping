@@ -21,16 +21,18 @@
 ##API list
  1. [react-native-beacons-android](https://github.com/mmazzarolo/react-native-beacons-android) (IBEACONS control)
  
- 2.react-native-bluetooth-serial (Automatically open the bluetooth)
+ 2. [react-native-bluetooth-serial](https://github.com/rusel1989/react-native-bluetooth-serial) (Automatically open the bluetooth)
  
- 3.react-native-router-flux (Jump Page)
+ 3. [react-native-router-flux](https://github.com/aksonov/react-native-router-flux) (Jump Page)
  
- 4.react-native-sensor-manager (Detect mobile phone level)
+ 4. [react-native-sensor-manager](https://github.com/kprimice/react-native-sensor-manager) (Detect mobile phone level)
  
- 5.react-native-youtube (Play Youtube Video)
+ 5. [react-native-youtube](https://github.com/inProgress-team/react-native-youtube) (Play Youtube Video)
  
- 6.react-native-sound (Play sound effects)
+ 6. [react-native-sound](https://github.com/zmxv/react-native-sound) (Play sound effects)
  
- 7.react-native-screen-brightness (Automatically adjust the screen brithtness)
+ 7. [react-native-screen-brightness](https://github.com/robinpowered/react-native-screen-brightness) (Automatically adjust the screen brithtness)
  
- 8.react-native-keep-awake-android (Keep awake screen)
+ 8. [react-native-keep-awake-android](https://github.com/corbt/react-native-keep-awake) (Keep awake screen)
+ 
+ 9. [react-native-storage](https://github.com/sunnylqm/react-native-storage) (Save information)
