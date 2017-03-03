@@ -36,3 +36,5 @@
  8. [react-native-keep-awake-android](https://github.com/corbt/react-native-keep-awake) (Keep awake screen)
  
  9. [react-native-storage](https://github.com/sunnylqm/react-native-storage) (Save information)
+ 
+ ###copyright by [ZheLang](https://github.com/zhelang)
