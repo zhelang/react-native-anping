@@ -656,7 +656,7 @@ export default class MainFunction extends Component {
 					controls={ 0 }
 					loop={ false }
 					apiKey={ myYoutubeAPIKey }
-					style={ this.state.paused ? styles.video_paused : styles.video_play }
+					style={ this.state.flagConnect ? styles.video_play : styles.video_paused }
 					onChangeState={ (e) => { 
 					
 						//播放完畢時，暫停撥放
