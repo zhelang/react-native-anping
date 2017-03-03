@@ -28,7 +28,7 @@ const { ScreenBrightness } = NativeModules;
 
 
 
-//近的距離(dbm)
+//iBeacons可排序的距離(dbm)
 const nearRangRSSI = -75;
 //藍芽偵測頻率(s)
 const bluetoothScanFrequency = 2;
@@ -39,7 +39,7 @@ const angleAccuracy = 9;
 //重力加速度
 const gravityAcceleration = 9.8;
 //斷線誤差(s)
-const disconnectValue = 3;
+const disconnectValue = 5;
 //程式迴圈間隔(ms)
 const FPS = 1000;
 //偵測次數重設間隔(s)，建議至少大於iBeacons發送訊號時間的兩倍(Interval: 2588ms)
@@ -72,7 +72,14 @@ var iBInfo = [
 //紀錄陣列大小
 const IBEACON_LENG = iBInfo.length;
 const KEY='ibeacon';
-var storage;
+var storage = new Storage({
+			size: IBEACON_LENG+1,
+			storageBackend: AsyncStorage,//RN使用AsyncStorage
+			defaultExpires: null,
+			enableCache: false,
+			sync:null//可獲取抓網路JSON資料
+			});
+global.storage = storage;
 
 
 
@@ -101,9 +108,6 @@ export default class MainFunction extends Component {
 		  //連線中Falg
 		  flagConnect:false,
 		  
-		  //目前狀態
-		  STATUS:false,
-		  
 		  //斷線誤差計數器，一開始要為0
 		  counterDisconnect:0,
 		  
@@ -124,17 +128,7 @@ export default class MainFunction extends Component {
 		  playEndedFlag: false,
 		};
 		
-		//初始化儲存資料
-		storage = new Storage({
-			size: IBEACON_LENG+1,
-			storageBackend: AsyncStorage,//RN使用AsyncStorage
-			defaultExpires: null,
-			enableCache: false,
-			sync:null//可獲取抓網路JSON資料
-		});
-		global.storage = storage;
-		
-		//抓取已閱覽資訊
+		//抓取已閱覽紀錄
 		this.GetViewVideoInfo=()=>{
 			for(let i=0;i<IBEACON_LENG;i++){
 				storage.load({
@@ -491,28 +485,18 @@ export default class MainFunction extends Component {
 		if( flagConnect && levelFlag && (VideoId=!null)){
 				
 			//開始撥放影片
-			this.setState({paused:false, STATUS:true});
+			this.setState({paused:false});
 			//console.warn("撥放影片:"+this.state.VideoId+", paused="+this.state.paused);
 				
 		}else if( flagConnect && !levelFlag && (VideoId =! null)){
 			//console.warn("暫停播放");
 			
-			this.setState({paused:true, STATUS:false});
-		
-			//震動間隔
-			/*
-			if((resetDectCountCount % LITI_VIBRATE) == 0){
-	
-				//有影片可以撥放時可以觀看，提醒使用者
-				Vibration.vibrate();
-				
-			}//end if
-			*/
+			this.setState({paused:true});
 				
 		}else if( !flagConnect ){
 				
 			//附近完全沒有IBeacon
-			this.setState({paused:true, STATUS:false});
+			this.setState({paused:true});
 				
 			//重設狀態
 			var closeMajor = null;
@@ -616,11 +600,12 @@ export default class MainFunction extends Component {
 		
 		//連結state
 		NowVideoID = this.state.VideoId;
+		NowIBMinor = this.state.closeMinor;
 
 		//搜尋
 		for(let i=0;i<IBEACON_LENG;i++){
-			//找到ID and 沒有被看過
-			if(iBInfo[i][VIDEOID]==NowVideoID && iBInfo[i][VIEWED]==false){
+			//相同Minor and 找到ID and 沒有被看過
+			if(iBInfo[i][MINOR]==NowIBMinor && iBInfo[i][VIDEOID]==NowVideoID && iBInfo[i][VIEWED]==false){
 
 				//已看過影片數量+1
 				this.setState({VideoISViewed: this.state.VideoISViewed += 1 });
@@ -657,9 +642,9 @@ export default class MainFunction extends Component {
 		return (
 			<View style={styles.fullScreen}>
 			
-				<Image source={Radar} style={ this.state.paused ? styles.radar_show : styles.radar_hide } />
+				<Image source={Radar} style={ (this.state.paused&&!this.state.flagConnect) ? styles.radar_show : styles.radar_hide } />
 
-				<Text style={ this.state.paused ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
+				<Text style={ (this.state.paused&&!this.state.flagConnect) ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
 					{"已導覽: " + this.state.VideoISViewed + "/" + IBEACON_LENG } 
 				</Text>
 		
