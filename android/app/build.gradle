@@ -139,6 +139,7 @@ android {
 }
 
 dependencies {
+    compile project(':react-native-fs')
 	compile project(":react-native-screen-brightness")
     compile project(':react-native-sound')
 	compile project(':RCTYouTube')

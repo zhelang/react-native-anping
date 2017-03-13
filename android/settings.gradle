@@ -1,4 +1,6 @@
 rootProject.name = 'Anping'
+include ':react-native-fs'
+project(':react-native-fs').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-fs/android')
 include ':react-native-sound'
 project(':react-native-sound').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sound/android')
 include ':react-native-beacons-android'
@@ -9,6 +11,6 @@ include ':app'
 include ':react-native-sensor-manager'
 project(':react-native-sensor-manager').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-sensor-manager/android')
 include ':RCTYouTube', ':app'
-project(':RCTYouTube').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-youtube/RCTYouTube')
+project(':RCTYouTube').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-youtube/android')
 include ':react-native-screen-brightness'
 project(':react-native-screen-brightness').projectDir = new File(settingsDir, '../node_modules/react-native-screen-brightness/android')

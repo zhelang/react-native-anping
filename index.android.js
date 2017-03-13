@@ -1,7 +1,7 @@
 /**
  * Anping App
  * Ver:002 Date:2016/12/20
- * ZheLeng
+ * ZheLeng YuanSyun
  */
  
 //基本元件
@@ -15,7 +15,8 @@ import { Scene, Router, TabBar, Modal, Schema, Actions, Reducer, ActionConst } f
 import Welcome from './src/Welcome';
 import StartButton from './src/StartButton';
 import MainFunctionPage from './src/MainFunction';
-
+import VideoListPage from './src/VideoList';
+import VideoPlayerPage from './src/VideoPlayer';
 
 
 
@@ -32,17 +33,18 @@ const reducerCreate = params=>{
 
 
 
-
-
+//
 export default class Anping_V002 extends Component {
   render() {
     return (
         <Router createReducer={reducerCreate} sceneStyle={{backgroundColor:'#F7F7F7'}} navigationBarStyle={{backgroundColor:'#7db732'}} >
             <Scene key="root" hideNavBar={true}>
                 <Scene key="welcome" component={Welcome} title="Welcome" initial={true}/>
-				<Scene key="start_button_page" component={StartButton} title="Start" />
-                <Scene key="mainfunctionpage" component={MainFunctionPage} title="MainFunctionPage"/>
-
+				<Scene key="startbutton_page" component={StartButton} title="Start"/>
+				<Scene key="mainfunction_page" component={MainFunctionPage} title="MainFunctionPage"/>
+				<Scene key="videolist_page" component={VideoListPage} title="VideoListPage"/>
+				<Scene key="videoplayerpage" component={VideoPlayerPage}  title="VideoPlayerPage"/>
+				
             </Scene>
         </Router>
     );

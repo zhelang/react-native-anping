@@ -8,6 +8,7 @@ import {Actions} from "react-native-router-flux";
 import Arrow from '../drawable/ic_arr.png';
 import Button_One from '../drawable/btn_start_one.png';
 import Button_Four from '../drawable/btn_start_four.png';
+import VideoListBtnSrc from '../drawable/btn_video_list.png';
 //圖片陣列
 const BtnViewArray = [Button_One,Button_Four];
 
@@ -23,13 +24,12 @@ export default class extends React.Component {
 
         this.state = {
             offset: new Animated.Value(-deviceHeight),//畫面起始位置
-			BtnIndex: 0,
-			BtnSrc:  BtnViewArray[0] //
+			ScanBtnSrc:  BtnViewArray[0] //按鈕初始效果
         };
 		
 		//JaveScript SE6 添加Function到此Class
-		this.start_scanning = this.start_scanning.bind(this);
-		this.play_pressing = this.play_pressing.bind(this);
+		this.playPressing = this.playPressing.bind(this);
+		this.jumpMainFunctionPage = this.jumpMainFunctionPage.bind(this);
     }
 	
 	
@@ -54,34 +54,33 @@ export default class extends React.Component {
     }
 	
 	
+	
+	jumpMainFunctionPage(){
+		Actions.mainfunction_page();
+	}
+	
+	
+	jumpVideoListPage(){
+		Actions.videolist_page();
+	}
+	
+	
 
-	
-	
     closeModal() {
 		
 		//跳轉MainFunctionPage特效
         Animated.timing(this.state.offset, {
             duration: 150,
             toValue: deviceHeight
-        }).start(Actions.mainfunctionpage);
+        }).start(Actions.mainfunction_page());
     }//end 
+
 	
-	
-	
-	
-	
-	//按鈕照片切換速度10ms
-	start_scanning(){
-		
-		//跳轉畫面
-		Actions.mainfunctionpage();
-		
-	}//end 
 	
 	
 	
 	//播放按鈕效果
-	play_pressing(){
+	playPressing(){
 		
 		this.setState({
 			BtnSrc:BtnViewArray[1]
@@ -91,7 +90,7 @@ export default class extends React.Component {
 	
 	
 
-	
+	//onPress={ Actions.videolistpage }
     render(){
         return (
             <View style={styles.container}>
@@ -108,9 +107,15 @@ export default class extends React.Component {
 						請將手機放置"AR望眼鏡"中{'\n'}
 						將開始安平海關導覽！
 					</Text>
+					
 					<Image source={Arrow} style={styles.arrow} />
-					<TouchableWithoutFeedback  onPress={this.start_scanning} onPressIn={this.play_pressing}>
-						<Image source={this.state.BtnSrc} style={styles.button} />
+					
+					<TouchableWithoutFeedback  onPress={ this.jumpMainFunctionPage } onPressIn={ this.playPressing }>
+						<Image source={this.state.ScanBtnSrc} style={styles.ScanButton} />
+                    </TouchableWithoutFeedback>
+					
+					<TouchableWithoutFeedback onPress={ this.jumpVideoListPage }>
+						<Image source={VideoListBtnSrc} style={styles.VideoListButton} />
                     </TouchableWithoutFeedback>
 					
 				</View>
@@ -126,5 +131,6 @@ var styles = StyleSheet.create({
 	context:{color:"black",fontSize:20,justifyContent: "center",alignItems: "center",textAlign: "center"},
 	photo:{flex:0.9,justifyContent: "center",alignItems: "center"},
 	arrow:{width: 20,height: 20,resizeMode: Image.resizeMode.contain},
-	button:{width: 125,	height: 125,resizeMode: Image.resizeMode.contain}
+	ScanButton:{width: 125,	height: 125,resizeMode: Image.resizeMode.contain},
+	VideoListButton:{marginTop:20, width: 50, height: 50,resizeMode: Image.resizeMode.contain}
 });

@@ -11,6 +11,7 @@
     "react-native": "0.39.2",
     "react-native-beacons-android": "^2.1.0",
     "react-native-bluetooth-serial": "^0.1.6",
+    "react-native-fs": "^2.1.0-rc.1",
     "react-native-notification": "^2.0.0",
     "react-native-router-flux": "^3.37.0",
     "react-native-sensor-manager": "^0.1.10",

@@ -1,10 +1,13 @@
-//此page主要功能：
-//1.iBeacon偵測距離
-//2.震動 提醒指定距離到了
-//3.加速器偵測水平時，才可以播放影片；否則震動提示
-//4.水平時且距離近，則顯示影片
+/*
+此page主要功能：
 
+ 0.讀取vid_list.txt
+ 1.iBeacon偵測距離
+ 2.震動 提醒指定距離到了
+ 3.加速器偵測水平時，才可以播放影片；否則震動提示
+ 4.水平時且距離近，則顯示影片
 
+*/
 
 
 
@@ -21,7 +24,7 @@ import YouTube from 'react-native-youtube';
 //Sound API
 import Sound from 'react-native-sound';
 //Storage API
-import Storage from 'react-native-storage';
+import RNFS from 'react-native-fs';
 //ScreenBrightness API
 const { ScreenBrightness } = NativeModules;
 
@@ -55,31 +58,24 @@ import Radar from '../drawable/radar.gif';
 const requireAudio = 'hit_sound.mp3';
 //Youtube API Key
 const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
+
+
+
+//影片儲存檔案位置
+const VIDEO_LIST_FILE = RNFS.DocumentDirectoryPath + '/vid_list.txt';
+//VIdeo JSON
+var VIDEO_JSON;
 //Ibeacons的基本資訊 Array
-//Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=偵測次數, Index_4=是否被看過
-const MAJOR = 0,MINOR = 1, VIDEOID = 2, DECTCOUNT = 3, VIEWED = 4;
-var iBInfo = [
-		[10001,1000,'2x5XUlLbvn8',0,false],
-		[10001,1001,'T5i-MDRfEYI',0,false],
-		[10001,1002,'8yOvsVQKJMs',0,false],
-		[10001,1003,'s-m_9RmUNNU',0,false],
-		[10001,1004,'sMyHnZ4lV54',0,false],
-		[10001,1005,'oleKA8j841w',0,false],
-		[10001,1006,'A8NlljMtsIY',0,false],
-		[10001,1007,'4cjrYBj81Ko',0,false],
-		[61577,38355,'4cjrYBj81Ko',0,false],
-	];
+//Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=是否被看過, Index_4=偵測次數
+const MAJOR = 0,MINOR = 1, VIDEOID = 2, VIEWED = 3 ,DECTCOUNT = 4;
+var IBINFO = [];
 //紀錄陣列大小
-const IBEACON_LENG = iBInfo.length;
-const KEY='ibeacon';
-var storage = new Storage({
-			size: IBEACON_LENG+1,
-			storageBackend: AsyncStorage,//RN使用AsyncStorage
-			defaultExpires: null,
-			enableCache: false,
-			sync:null//可獲取抓網路JSON資料
-			});
-global.storage = storage;
+var IBEACON_LENG;
+
+
+
+//Timer
+var TIMER;
 
 
 
@@ -128,41 +124,45 @@ export default class MainFunction extends Component {
 		  playEndedFlag: false,
 		};
 		
+		
+		
 		//抓取已閱覽紀錄
 		this.GetViewVideoInfo=()=>{
-			for(let i=0;i<IBEACON_LENG;i++){
-				storage.load({
-					key: KEY+i,
-					autoSync:false,//不使用網路抓取JSON
-					syncInBackground: false,
-				})
-				.then(get => {
-					if(get.viewed){
-						iBInfo[i][VIEWED] = true;
-						console.log('iBInfo['+i+'][VIEWED] = ' + iBInfo[i][VIEWED]);
-					}
-				})
-				.catch(err => {
-					console.log('GetViewVideoInfo FAIL: '+err.message);
-				})
-			}//end for
+			//抓取記事本內容(JSON格式)
+			RNFS.readFile(VIDEO_LIST_FILE).then((content)=>{    
 			
-			storage.load({
-					key: KEY+'NumberOfViewedVideo',
-					autoSync:false,//不使用網路抓取JSON
-					syncInBackground: false,
-				})
-				.then(get => {
-					if(get.number>0){
-						this.setState({VideoISViewed: get.number});
-					}
-				})
-				.catch(err => {
-					console.log('GetViewVideoInfo FAIL: '+err.message);
-				})
+				//with vid_list
+				VIDEO_JSON = JSON.parse(content);
+				
+				//將JSON資料放置IBINFO Array
+				var temp_array_vid_info=[];
+				var isViewedNumber=0;
+				for(var i=0 ; i<VIDEO_JSON.length ; i++){
+					temp_array_vid_info.push(VIDEO_JSON[i].major);
+					temp_array_vid_info.push(VIDEO_JSON[i].minor);
+					temp_array_vid_info.push(VIDEO_JSON[i].video_id);
+					temp_array_vid_info.push(VIDEO_JSON[i].unlocked);
+					temp_array_vid_info.push(0);//Index_4=偵測次數
+					if(VIDEO_JSON[i].unlocked){ isViewedNumber++;	} //紀錄已看過數量
+					IBINFO.push(temp_array_vid_info);
+					//console.warn("temp_array_vid_info:"+temp_array_vid_info);
+					temp_array_vid_info=[];
+				}
+				IBEACON_LENG = IBINFO.length; //總共IBeacons數量
+				this.setState({
+					VideoISViewed: isViewedNumber,
+				});
+				
+				//console.warn("FETCH SUCCES");									  
+			}).catch((err)=>{
+				console.warn("FETCH ERROR:"+err);
+				
+			}).done();
 			
 		};
 		this.GetViewVideoInfo();
+		
+		
 		
 		//音效設定
 		this.playSound=()=>{
@@ -209,7 +209,11 @@ export default class MainFunction extends Component {
 		BackAndroid.addEventListener('hardwareBackPress', ()=> {
 			
 			//釋放Timer
-			clearInterval(this.Timer);
+			clearInterval(TIMER);
+			
+			//release Listener
+			this._beaconsDidRange.remove();
+			this._Accelerometer.remove();
 			
 			//關閉藍芽
 			BluetoothSerial.disable()
@@ -220,14 +224,11 @@ export default class MainFunction extends Component {
 				
 			//復原亮度
 			ScreenBrightness.setBrightness(this.state.initScreenBrithness);
-			
-			//離開程式
-			BackAndroid.exitApp();
 	
 		});
 		
 		//FPS(ms)觸發一次，mainFlowControl()
-		this.Timer = setInterval(() => { 
+		TIMER = setInterval(() => { 
 				//進入流程控制
 				this.mainFlowControl(); 
 		}, FPS);
@@ -255,7 +256,7 @@ export default class MainFunction extends Component {
 		mSensorManager.startAccelerometer(acceleratorDetectionFrequency);
 		
 		//加速器偵測事件
-		DeviceEventEmitter.addListener('Accelerometer', (data) => 
+		this._Accelerometer = DeviceEventEmitter.addListener('Accelerometer', (data) => 
 			this.onAccelerometerUpdate(data)
 		);
 		
@@ -282,7 +283,7 @@ export default class MainFunction extends Component {
 		);
 		
 		//iBecons Ranging的事件
-		this.beaconsDidRange = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {
+		this._beaconsDidRange = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {
 				//console.warn("偵測到IBeacons");
 					
 				//儲存資料(data.beacons是陣列內容)
@@ -366,9 +367,9 @@ export default class MainFunction extends Component {
 			if(beacons[i].rssi >= nearRangRSSI){
 				//偵測次數++
 				for(var k=0;k<IBEACON_LENG;k++){
-					if((beacons[i].major == iBInfo[k][MAJOR]) && (beacons[i].minor == iBInfo[k][MINOR])){
-						iBInfo[k][DECTCOUNT]++;
-						//console.warn(beacons[i].major + "'s Count = " + iBInfo[k][3]);
+					if((beacons[i].major == IBINFO[k][MAJOR]) && (beacons[i].minor == IBINFO[k][MINOR])){
+						IBINFO[k][DECTCOUNT]++;
+						//console.warn(beacons[i].major + "'s Count = " + IBINFO[k][3]);
 					}//end if
 				}//end for		
 			}else{
@@ -410,18 +411,18 @@ export default class MainFunction extends Component {
 				//如果與上一個最接近的不一樣，則重新抓取VideoID
 				if( !((old_closeMajor == new_closeMajor) && (old_closeMinor == new_closeMinor)) ){
 					
-					//console.warn("iBInfo的大小:"+iBInfo.length);
+					//console.warn("iBInfo的大小:"+IBINFO.length);
 					//console.warn("closeMajor:"+closeMajor+",closeMinor:"+closeMinor);
 				
 					//配對Major, Minor
 					for(var i=0; i < IBEACON_LENG ; i++){
 					
-						//console.warn("iBInfo["+i+"][0]:"+iBInfo[i][0]+",iBInfo["+i+"][1]:"+iBInfo[i][1]);
+						//console.warn("IBINFO["+i+"][0]:"+IBINFO[i][0]+",IBINFO["+i+"][1]:"+IBINFO[i][1]);
 						
-						if((new_closeMajor == iBInfo[i][MAJOR]) && (new_closeMinor == iBInfo[i][MINOR])){
+						if((new_closeMajor == IBINFO[i][MAJOR]) && (new_closeMinor == IBINFO[i][MINOR])){
 							
 							//設定Uri
-							this.setState({VideoId:iBInfo[i][VIDEOID]});
+							this.setState({VideoId:IBINFO[i][VIDEOID]});
 							
 							//附近有可以辨識的IBeacons
 							this.setState({haveIB: true, playEndedFlag: false});
@@ -563,10 +564,10 @@ export default class MainFunction extends Component {
 		var closeMinor=null;
 		
 		for(var i=0;i<IBEACON_LENG;i++){
-			if((iBInfo[i][DECTCOUNT] != 0) && (iBInfo[i][DECTCOUNT] > count)){
-				count = iBInfo[i][DECTCOUNT];
-				closeMajor = iBInfo[i][MAJOR];
-				closeMinor = iBInfo[i][MINOR];
+			if((IBINFO[i][DECTCOUNT] != 0) && (IBINFO[i][DECTCOUNT] > count)){
+				count = IBINFO[i][DECTCOUNT];
+				closeMajor = IBINFO[i][MAJOR];
+				closeMinor = IBINFO[i][MINOR];
 			}
 		}//end for
 		
@@ -585,7 +586,7 @@ export default class MainFunction extends Component {
 	ResetBeaconCount(){
 		
 		for(var i=0;i<IBEACON_LENG;i++){
-			iBInfo[i][DECTCOUNT] = 0;
+			IBINFO[i][DECTCOUNT] = 0;
 		}//end for
 		//console.warn("IBeacon計數紀錄清除完成");
 		
@@ -605,29 +606,24 @@ export default class MainFunction extends Component {
 		//搜尋
 		for(let i=0;i<IBEACON_LENG;i++){
 			//相同Minor and 找到ID and 沒有被看過
-			if(iBInfo[i][MINOR]==NowIBMinor && iBInfo[i][VIDEOID]==NowVideoID && iBInfo[i][VIEWED]==false){
+			if(IBINFO[i][MINOR]==NowIBMinor && IBINFO[i][VIDEOID]==NowVideoID && IBINFO[i][VIEWED]==false){
 
 				//已看過影片數量+1
 				this.setState({VideoISViewed: this.state.VideoISViewed += 1 });
 
 				//紀錄已看過
-				iBInfo[i][VIEWED] = true;
+				IBINFO[i][VIEWED] = true;
+				VIDEO_JSON[i]['unlocked'] = true;
 				
-				//儲存瀏覽紀錄
-				storage.save({
-					key: KEY+i,
-					rawData:{
-						viewed: 'true',
-					},
-					expires: null,
-				});
-				storage.save({
-					key: KEY+'NumberOfViewedVideo',
-					rawData: {
-						number: this.state.VideoISViewed,
-					},
-					expires: null,
-				});
+				//寫回vid_list.txt
+				RNFS.writeFile(VIDEO_LIST_FILE , JSON.stringify(VIDEO_JSON) , 'utf8')
+				.then((success)=>{
+					console.warn('File WRITTEN');
+					})
+				.catch((err)=>
+					console.warn(err.message)
+				);
+				
 			}
 		}//end for
 
@@ -657,10 +653,10 @@ export default class MainFunction extends Component {
 					loop={ false }
 					apiKey={ myYoutubeAPIKey }
 					style={ this.state.flagConnect ? styles.video_play : styles.video_paused }
-					onChangeState={ (e) => { 
+					onChangeState={ (event) => { 
 					
 						//播放完畢時，暫停撥放
-						if(e.nativeEvent.state == 'ended'){
+						if(event.state == 'ended'){
 							
 							//讓目前IBeacon斷線
 							this.setState({paused: false, haveIB: false, playEndedFlag: true});
