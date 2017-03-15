@@ -16,7 +16,6 @@ import Welcome from './src/Welcome';
 import StartButton from './src/StartButton';
 import MainFunctionPage from './src/MainFunction';
 import VideoListPage from './src/VideoList';
-import VideoPlayerPage from './src/VideoPlayer';
 
 
 
@@ -43,7 +42,6 @@ export default class Anping_V002 extends Component {
 				<Scene key="startbutton_page" component={StartButton} title="Start"/>
 				<Scene key="mainfunction_page" component={MainFunctionPage} title="MainFunctionPage"/>
 				<Scene key="videolist_page" component={VideoListPage} title="VideoListPage"/>
-				<Scene key="videoplayerpage" component={VideoPlayerPage}  title="VideoPlayerPage"/>
 				
             </Scene>
         </Router>

@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity , Image,TouchableWithoutFeedback} from "react-native";
+import {View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity, Image,TouchableWithoutFeedback} from "react-native";
 import {Actions} from 'react-native-router-flux';
 //Youtube API
 import YouTube from 'react-native-youtube';
@@ -31,7 +31,7 @@ export default class extends React.Component {
 			quality: null,
 			error: null,
 			paused: true,
-			video_id: '',
+			video_id: 'A8NlljMtsIY',
 			apikey: myYoutubeAPIKey,
     	};
 
@@ -39,9 +39,9 @@ export default class extends React.Component {
 		this.playVideo = this.playVideo.bind(this);
 	}
 
-	
-
   componentWillMount(){
+  }
+  componentDidMount(){
 	  this.playVideo();
   }
 
@@ -50,9 +50,11 @@ export default class extends React.Component {
   //播放準備
   playVideo(){
     //console.warn('this.props.video_id = ' , this.props.video_id);
+	
+	//this.props.video_id,
     
     this.setState({
-		video_id: this.props.video_id,
+		video_id: 'A8NlljMtsIY',
 		paused: true,
 	});
 
@@ -72,7 +74,7 @@ export default class extends React.Component {
 					controls={ 1 }
 					loop={ false }
 					apiKey={ myYoutubeAPIKey }
-					style={ styles.video_play }
+					style={ this.state.paused ? styles.video_play : styles.video_paused }
 					onChangeState={ (event) => { 
 					
 						//播放完畢時，暫停撥放
@@ -94,13 +96,16 @@ export default class extends React.Component {
 const styles = StyleSheet.create({
   container: {
 		flex:1,
-		backgroundColor: '#000000',
+		backgroundColor: '#FFFFFF',
 		justifyContent: "center",
 		alignItems: "center",
   },
   video_play:{
 		width: deviceHeight,
 		height: deviceWidth,
-	},
+  },
+  video_paused:{
+		
+  },
 
 });

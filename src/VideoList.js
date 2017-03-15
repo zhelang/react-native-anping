@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import {View, Text, StyleSheet, Animated, Dimensions, ListView,TouchableOpacity , ScrollView,Image} from "react-native";
 import {Actions} from 'react-native-router-flux';
 import RNFS from 'react-native-fs';
+import YouTube from 'react-native-youtube';
 
 var {
   height: deviceWidth,
@@ -10,9 +11,10 @@ var {
 
 //引用圖片
 import LOCK from '../drawable/lock.png';
-
 //抓取記事本
 const VIDEO_LIST_FILE = RNFS.DocumentDirectoryPath + '/vid_list.txt';
+//Youtube API Key
+const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
 
 
 
@@ -26,6 +28,15 @@ export default class extends React.Component {
         dataSource:ds.cloneWithRows([]),
         comingSoonTop:deviceHeight,
         showing:false,
+		
+		//影片播放器參數
+			isReady: null,
+			VideoStatus: null,
+			quality: null,
+			error: null,
+			paused: false,
+			video_id: '',
+			apikey: myYoutubeAPIKey,
 
       };
 
@@ -95,7 +106,7 @@ export default class extends React.Component {
       rowData.body = rowData.body.slice(0,maxLen) + '...';
     }
 
-	//非解鎖狀態
+	//非解鎖狀態 rowData.unlocked ? Actions.videoplayerpage({video_id:rowData.video_id,refresh:{}}) : null
     if(rowData.unlocked){
       var outImage = <Image style={styles.thumbnail} source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
 	  console.log('抓取YOUTUBE 截圖成功');
@@ -112,7 +123,7 @@ export default class extends React.Component {
                 <Text style={styles.cellsTitle}>{rowData.title}</Text>
               </View>
 			  
-              <TouchableOpacity onPress={()=>{rowData.unlocked ? Actions.videoplayerpage({video_id:rowData.video_id,refresh:{}}) : null}}>
+              <TouchableOpacity onPress={()=>{ this.setState({paused: true, video_id: rowData.video_id}) }}>
                 <View style={styles.thumbnailContainer}>
                   {outImage}
                 </View>
@@ -130,42 +141,62 @@ export default class extends React.Component {
 
   render(){
     return(
-        <View style={{flex:1, backgroundColor:'#ffffff' }}>
-		
-			<View style={styles.title}>
+		<View style={ !this.state.paused ? {flex:1, backgroundColor:'#ffffff' } : styles.video_paused }>
+			<View style={{flex:1, backgroundColor:'#ffffff' }}>
 			
-				<TouchableOpacity style={styles.backbuttonContainer} onPress={()=>{Actions.pop();}}>
-					<View>
-						<Text>Back</Text>
-					</View>
-				</TouchableOpacity>
+				<View style={ styles.title }>
 				
-				<Text style={{color: "white",fontSize:20,fontWeight: "bold"}}>
-					安平海關AR導覽
-				</Text>
+					<TouchableOpacity style={  styles.backbuttonContainer } onPress={()=>{Actions.pop();}}>
+						<View>
+							<Text>Back</Text>
+						</View>
+					</TouchableOpacity>
+					
+					<Text style={ {color: "white",fontSize:20,fontWeight: "bold"} }>
+						安平海關AR導覽
+					</Text>
+					
+					<TouchableOpacity style={ styles.resetbuttonContainer } onPress={()=>{ this.deleteVideoData(); }}>
+						<View>
+							<Text>RESET</Text>
+						</View>
+					</TouchableOpacity>
+					
+				</View>
 				
-				<TouchableOpacity style={styles.resetbuttonContainer} onPress={()=>{ this.deleteVideoData(); }}>
-					<View>
-						<Text>RESET</Text>
-					</View>
-				</TouchableOpacity>
-				
+				  
+				  <View style={ styles.videoListContainer }>
+					  <ScrollView horizontal={true}>
+						<ListView
+						  horizontal={true}
+						  contentInset={{top:100}}
+						  dataSource={this.state.dataSource}
+						  renderRow={(rowData , sectionID , rowID , highlightRow) => this._renderRow(rowData , sectionID , rowID , highlightRow) }
+						 />
+					  </ScrollView>
+				  </View>
 			</View>
-			
-			  
-              <View style={styles.videoListContainer}>
-                  <ScrollView horizontal={true}>
-                    <ListView
-                      horizontal={true}
-                      contentInset={{top:100}}
-                      dataSource={this.state.dataSource}
-                      renderRow={(rowData , sectionID , rowID , highlightRow) => this._renderRow(rowData , sectionID , rowID , highlightRow) }
-                     />
-                  </ScrollView>
-              </View>
-
-              
-        </View>
+		
+			<YouTube
+						videoId={ this.state.video_id }
+						play={ this.state.paused }
+						hidden={ true }
+						playsInline={ true }
+						controls={ 1 }
+						loop={ false }
+						apiKey={ myYoutubeAPIKey }
+						style={ this.state.paused ? styles.video_play : styles.video_paused }
+						onChangeState={ (event) => { 
+						
+							//播放完畢時，暫停撥放
+							if(event.state == 'ended'){
+								this.setState({paused: false, video_id: ''});
+							}
+							
+						}}
+					/>
+				
+		</View>
 
     );
   }//end render
@@ -270,6 +301,13 @@ const styles = StyleSheet.create({
   cellsBody:{
     fontWeight:"200",
     fontSize:14,
+  },
+  video_play:{
+		width: deviceWidth,
+		height: deviceHeight,
+  },
+  video_paused:{
+		
   },
 
 });

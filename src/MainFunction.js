@@ -38,7 +38,7 @@ const bluetoothScanFrequency = 2;
 //加速器偵測頻率(ms)
 const acceleratorDetectionFrequency = 2000;
 //水平角度誤差(越大越遲鈍)
-const angleAccuracy = 9;
+const ANGLE_ACC = 2;
 //重力加速度
 const gravityAcceleration = 9.8;
 //斷線誤差(s)
@@ -304,12 +304,9 @@ export default class MainFunction extends Component {
 		//連接Sate
 		var levelFlag = this.state.levelFlag;
 		
-		if( ((data.x>-angleAccuracy)&&(data.x<angleAccuracy) || (data.y>-angleAccuracy)&&(data.y<angleAccuracy)) && (data.z>gravityAcceleration) ){
+		if( ((data.x>=-ANGLE_ACC) && (data.y>=-ANGLE_ACC)&&(data.y<=ANGLE_ACC)) && (data.z>=ANGLE_ACC) ){
 			//手機水平時
 			levelFlag = true;
-		}else if( ((data.x>-angleAccuracy)&&(data.x<angleAccuracy) || (data.y>-angleAccuracy)&&(data.y<angleAccuracy)) && (data.z>-angleAccuracy)&&(data.z<angleAccuracy) ){
-			//手機垂直時
-			levelFlag = false;
 		}else{
 			//手機不確定的狀態時
 			levelFlag = false;
@@ -319,6 +316,8 @@ export default class MainFunction extends Component {
 		this.setState({
 			levelFlag: levelFlag
 		});
+		
+		//console.warn('acc.x='+data.x+', acc.y='+data.y+', acc.z='+data.z+', levelFlag='+levelFlag);
 		
 	}//end onAccelerometerUpdate
 	
@@ -618,7 +617,7 @@ export default class MainFunction extends Component {
 				//寫回vid_list.txt
 				RNFS.writeFile(VIDEO_LIST_FILE , JSON.stringify(VIDEO_JSON) , 'utf8')
 				.then((success)=>{
-					console.warn('File WRITTEN');
+					//console.warn('File WRITTEN');
 					})
 				.catch((err)=>
 					console.warn(err.message)
