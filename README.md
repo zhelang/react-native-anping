@@ -1,4 +1,4 @@
-##This APP function
+## This APP function
 
  1.Play sound effects and vibrate when IBEACONS is detected.
  
@@ -10,7 +10,7 @@
  
  5.Record seen the film.
  
-##Development Environment
+## Development Environment
 
  OS: Windows 10
  
@@ -18,7 +18,7 @@
  
  Mobile Operating System: Android 6.0
  
-##API list
+## API list
 1.[react-native-beacons-android](https://github.com/mmazzarolo/react-native-beacons-android) (IBEACONS control)
  
 2.[react-native-bluetooth-serial](https://github.com/rusel1989/react-native-bluetooth-serial) (Automatically open the bluetooth)
