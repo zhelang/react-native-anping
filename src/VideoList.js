@@ -105,15 +105,7 @@ export default class extends React.Component {
     if(rowData.body.length > maxLen){
       rowData.body = rowData.body.slice(0,maxLen) + '...';
     }
-
-	//非解鎖狀態 rowData.unlocked ? Actions.videoplayerpage({video_id:rowData.video_id,refresh:{}}) : null
-    if(rowData.unlocked){
-      var outImage = <Image style={styles.thumbnail} source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
-	  console.log('抓取YOUTUBE 截圖成功');
-    }
-    else{
-      var outImage = <Image style={styles.thumbnail} source={ LOCK }/>
-    }
+	
     return(
 
           <View style={styles.cellContainer}>
@@ -123,10 +115,13 @@ export default class extends React.Component {
                 <Text style={styles.cellsTitle}>{rowData.title}</Text>
               </View>
 			  
-              <TouchableOpacity onPress={()=>{ this.setState({paused: true, video_id: rowData.video_id}) }}>
-                <View style={styles.thumbnailContainer}>
-                  {outImage}
+              <TouchableOpacity onPress={()=>{ if(rowData.unlocked){this.setState({paused: true, video_id: rowData.video_id})} }}>
+			  
+                <View style={ styles.thumbnailContainer }>
+					<Image style={ rowData.unlocked ? styles.thumbnail : styles.thumbnail_lock } source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
+					<Image style={ rowData.unlocked ? styles.lock_hide : styles.lock }source={ LOCK }/>
                 </View>
+				
               </TouchableOpacity>
 			  
               <View style={styles.cellsBodyContainer}>
@@ -142,7 +137,7 @@ export default class extends React.Component {
   render(){
     return(
 		<View style={ !this.state.paused ? {flex:1, backgroundColor:'#ffffff' } : styles.video_paused }>
-			<View style={{flex:1, backgroundColor:'#ffffff' }}>
+			<View style={{flex:1, backgroundColor:'#ececec' }}>
 			
 				<View style={ styles.title }>
 				
@@ -204,14 +199,6 @@ export default class extends React.Component {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderColor:'red',
-    borderWidth:2,
-  },
   title:{
 	  flex:0.1,
 	  backgroundColor:"#e6684b",
@@ -227,8 +214,8 @@ const styles = StyleSheet.create({
 	height: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor:'green',
-    borderWidth:2,
+    //borderColor:'green',
+    //borderWidth:2,
   },
   resetbuttonContainer:{
 	position:'absolute',
@@ -238,26 +225,26 @@ const styles = StyleSheet.create({
 	height: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor:'green',
-    borderWidth:2,
+    //borderColor:'green',
+    //borderWidth:2,
   },
   videoListContainer:{
-	flex:0.9,
+	flex: 0.9,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor:'red',
-    borderWidth:2,
+    //borderColor:'red',
+    //borderWidth:2,
 	marginTop:10,
     marginBottom:10,
   },
   cellContainer:{
     width:deviceWidth / 3.5 + 10,
-    height:deviceHeight - 60,
+    height:deviceHeight,
     justifyContent: 'flex-start',
     alignItems: 'center',
     backgroundColor:'#ececec',
-    borderColor:'blue',
-    borderWidth:2,
+    //borderColor:'blue',
+    //borderWidth:2,
   },
   cell:{
     width:deviceWidth / 3.5,
@@ -268,22 +255,21 @@ const styles = StyleSheet.create({
     marginBottom:10,
     backgroundColor:'#ffffff',
 
-    borderColor:'purple',
-    borderWidth:2,
+    //borderColor:'purple',
+    //borderWidth:2,
   },
   cellsTitleContainer:{
     height:30,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor:'yellow',
-    borderWidth:2,
+    //borderColor:'yellow',
+    //borderWidth:2,
   },
   cellsTitle:{
     fontWeight:"500",
     fontSize:16,
   },
   thumbnailContainer:{
-    
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -292,11 +278,28 @@ const styles = StyleSheet.create({
     width:deviceWidth / 3.5 - 10,
     resizeMode:'contain',
   },
+  thumbnail_lock:{
+	height:deviceHeight / 2,
+    width:deviceWidth / 3.5 - 10,
+    resizeMode:'contain',
+	opacity: 0.5,/*影片縮圖被鎖時的透明度*/
+  },
+  lock:{
+	position:'absolute',
+    top:0,
+    right:0,
+	width: deviceWidth / 3.5 - 10,
+	height: deviceHeight / 2,  
+  },
+  lock_hide:{
+	width:0,
+	height:0,
+  },
   cellsBodyContainer:{
     width:deviceWidth / 3.5,
     marginTop:10,
-    borderColor:'green',
-    borderWidth:2,
+    //borderColor:'green',
+    //borderWidth:2,
   },
   cellsBody:{
     fontWeight:"200",

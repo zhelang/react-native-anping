@@ -6,6 +6,7 @@
  2.震動 提醒指定距離到了
  3.加速器偵測水平時，才可以播放影片；否則震動提示
  4.水平時且距離近，則顯示影片
+ 5.看完影片時，則寫回vid_list.txt已閱覽過
 
 */
 
@@ -74,7 +75,7 @@ var IBEACON_LENG;
 
 
 
-//Timer
+//存放Timer，Relax時會用到
 var TIMER;
 
 
@@ -124,8 +125,6 @@ export default class MainFunction extends Component {
 		  playEndedFlag: false,
 		};
 		
-		
-		
 		//抓取已閱覽紀錄
 		this.GetViewVideoInfo=()=>{
 			//抓取記事本內容(JSON格式)
@@ -148,7 +147,7 @@ export default class MainFunction extends Component {
 					//console.warn("temp_array_vid_info:"+temp_array_vid_info);
 					temp_array_vid_info=[];
 				}
-				IBEACON_LENG = IBINFO.length; //總共IBeacons數量
+				IBEACON_LENG = VIDEO_JSON.length; //總共IBeacons數量
 				this.setState({
 					VideoISViewed: isViewedNumber,
 				});
@@ -161,8 +160,6 @@ export default class MainFunction extends Component {
 			
 		};
 		this.GetViewVideoInfo();
-		
-		
 		
 		//音效設定
 		this.playSound=()=>{
@@ -707,9 +704,11 @@ const styles = StyleSheet.create({
 		
 	},
 	radar_show:{
-		flex:1,
-		width: 200,
-		height: 200,
+		position: "absolute",
+        top:0,
+        right:0,
+		width: 100,
+		height: 100,
 		resizeMode: 'contain',
 	},
 	radar_hide:{

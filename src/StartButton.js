@@ -114,9 +114,14 @@ export default class extends React.Component {
 						<Image source={this.state.ScanBtnSrc} style={styles.ScanButton} />
                     </TouchableWithoutFeedback>
 					
-					<TouchableWithoutFeedback onPress={ this.jumpVideoListPage }>
-						<Image source={VideoListBtnSrc} style={styles.VideoListButton} />
-                    </TouchableWithoutFeedback>
+					<View style={styles.VideoListDiv}>
+						<TouchableWithoutFeedback onPress={ this.jumpVideoListPage }>
+							<Image source={VideoListBtnSrc} style={styles.VideoListButton} />
+						</TouchableWithoutFeedback>
+						<Text>
+							影片列表
+						</Text>
+					</View>
 					
 				</View>
            </View>
@@ -132,5 +137,6 @@ var styles = StyleSheet.create({
 	photo:{flex:0.9,justifyContent: "center",alignItems: "center"},
 	arrow:{width: 20,height: 20,resizeMode: Image.resizeMode.contain},
 	ScanButton:{width: 125,	height: 125,resizeMode: Image.resizeMode.contain},
+	VideoListDiv:{position: "absolute", left: 25, bottom: 25},
 	VideoListButton:{marginTop:20, width: 50, height: 50,resizeMode: Image.resizeMode.contain}
 });
