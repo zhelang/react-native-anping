@@ -47,6 +47,7 @@ export default class extends React.Component {
         };
 		
 		this.jumpStartButtonPage = this.jumpStartButtonPage.bind(this);
+		this.jumpFirstGuidPage = this.jumpFirstGuidPage.bind(this);
 		this.fetchVideoData = this.fetchVideoData.bind(this);
     }
 
@@ -55,11 +56,6 @@ export default class extends React.Component {
 	
 	
     componentWillMount(){
-		
-		//跳轉MainFunctionPage
-		setTimeout(() => {
-			this.jumpStartButtonPage()  //origin Actions.home()
-		}, 2500);
 		
 		//預先抓取資料
 		this.fetchVideoData();
@@ -87,6 +83,10 @@ export default class extends React.Component {
 
 		//抓取記事本內容(JSON格式)
         RNFS.readFile(VIDEO_LIST_FILE).then((content)=>{    
+			//跳轉MainFunctionPage
+			setTimeout(() => {
+				this.jumpStartButtonPage()  //origin Actions.home()
+			}, 2500);
 			//console.warn("抓到Local資料囉");
                                                       
         }).catch((err)=>{
@@ -96,7 +96,7 @@ export default class extends React.Component {
 			
 			var filePath =  VIDEO_LIST_FILE;
 			var vid_info = [
-                            {title:'number 1' , 'body':'This is vid 1' , vid:1 , unlocked:true , 'video_id': '2x5XUlLbvn8' , "major" : "10001" , "minor" : "1000"},
+                            {title:'number 1' , 'body':'This is vid 1' , vid:1 , unlocked:false , 'video_id': '2x5XUlLbvn8' , "major" : "10001" , "minor" : "1000"},
                             {title:'number 2' , 'body':'This is vid 2' , vid:2 , unlocked:false , 'video_id': 'T5i-MDRfEYI' , "major" : "10001" , "minor" : "1001"},
                             {title:'number 3' , 'body':'This is vid 3' , vid:3 , unlocked:false , 'video_id': '8yOvsVQKJMs' , "major" : "10001" , "minor" : "1002"},
                             {title:'number 4' , 'body':'This is vid 4' , vid:4 , unlocked:false , 'video_id': 's-m_9RmUNNU' , "major" : "10001" , "minor" : "1003"},
@@ -111,6 +111,11 @@ export default class extends React.Component {
 
 			RNFS.writeFile(filePath , JSON.stringify(vid_info) , 'utf8').then((success)=>{console.log('File WRITTEN:'+filePath);}).catch((err)=>console.warn(err.message));                                                       
 			
+			//跳轉初次導覽畫面
+			setTimeout(() => {
+				this.jumpFirstGuidPage()  //origin Actions.home()
+			}, 2500);
+			
         }).done();
 	}//end fetchVideoData()
 	
@@ -119,6 +124,13 @@ export default class extends React.Component {
 	jumpStartButtonPage(){
 		Actions.startbutton_page();
 	}
+	
+	
+	
+	jumpFirstGuidPage(){
+		Actions.firstguid_page();
+	}
+	
 	
 	
 	componentWillReceiveProps(){

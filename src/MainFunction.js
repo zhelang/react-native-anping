@@ -13,7 +13,7 @@
 
 
 import React, {Component}  from 'react';
-import {StyleSheet,Text,View,DeviceEventEmitter,Vibration,BackAndroid,TouchableOpacity,Image,Dimensions,AsyncStorage,NativeModules} from 'react-native';
+import {StyleSheet,Text,View,DeviceEventEmitter,Vibration,BackAndroid,TouchableOpacity,Image,Dimensions,AsyncStorage,NativeModules,NetInfo} from 'react-native';
 //ibeacons API引用
 import Beacons from 'react-native-beacons-android';
 //藍芽串流 API引用
@@ -114,6 +114,12 @@ export default class MainFunction extends Component {
 		  //紀錄已撥放的影片數量
 		  VideoISViewed: 0,
 		  
+		  //第一次播放影片flag
+		  flagFirstGuid: false,
+		  
+		  //是否有開啟網路
+		  flagNetwork: false,
+		  
 		  //影片播放器參數
 		  isReady: null,
 		  VideoStatus: null,
@@ -124,6 +130,12 @@ export default class MainFunction extends Component {
 		  apikey: myYoutubeAPIKey,
 		  playEndedFlag: false,
 		};
+		
+		//檢查是否有網路
+		NetInfo.isConnected.fetch().then(isConnected => {
+			this.setState({flagNetwork: isConnected});
+			//console.warn("flagNetwork="+isConnected);
+		});
 		
 		//抓取已閱覽紀錄
 		this.GetViewVideoInfo=()=>{
@@ -151,6 +163,15 @@ export default class MainFunction extends Component {
 				this.setState({
 					VideoISViewed: isViewedNumber,
 				});
+				
+				//如果都沒有看過影片&有網路，則播放第一次導覽教學影片
+				if(isViewedNumber==0 && this.state.flagNetwork){
+					this.setState({flagFirstGuid: true,});
+					//設定Uri
+					this.setState({VideoId:IBINFO[0][VIDEOID]});
+					//附近有可以辨識的IBeacons
+					this.setState({haveIB: true, playEndedFlag: false});
+				}//end if
 				
 				//console.warn("FETCH SUCCES");									  
 			}).catch((err)=>{
@@ -478,8 +499,9 @@ export default class MainFunction extends Component {
 		var flagConnect = this.state.flagConnect;
 		var levelFlag = this.state.levelFlag;
 		var VideoId = this.state.VideoId;
+		var flagFirstGuid = this.state.flagFirstGuid;
 			
-		if( flagConnect && levelFlag && (VideoId=!null)){
+		if(( flagConnect && levelFlag && (VideoId=!null)) || flagFirstGuid ){
 				
 			//開始撥放影片
 			this.setState({paused:false});
@@ -605,7 +627,7 @@ export default class MainFunction extends Component {
 			if(IBINFO[i][MINOR]==NowIBMinor && IBINFO[i][VIDEOID]==NowVideoID && IBINFO[i][VIEWED]==false){
 
 				//已看過影片數量+1
-				this.setState({VideoISViewed: this.state.VideoISViewed += 1 });
+				this.setState({VideoISViewed: this.state.VideoISViewed += 1 ,});
 
 				//紀錄已看過
 				IBINFO[i][VIEWED] = true;
@@ -630,16 +652,23 @@ export default class MainFunction extends Component {
 	
 	
 	//渲染畫面	
+
+	/*已導覽資訊
+		<Text style={ (this.state.paused&&!this.state.flagConnect) ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
+			{"已導覽: " + this.state.VideoISViewed + "/" + IBEACON_LENG } 
+		</Text>
+	*/
 	render() {
 		return (
 			<View style={styles.fullScreen}>
 			
-				<Image source={Radar} style={ (this.state.paused&&!this.state.flagConnect) ? styles.radar_show : styles.radar_hide } />
-
-				<Text style={ (this.state.paused&&!this.state.flagConnect) ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
-					{"已導覽: " + this.state.VideoISViewed + "/" + IBEACON_LENG } 
+				<Image source={Radar} style={ (this.state.paused&&!this.state.flagConnect&&this.state.flagNetwork) ? styles.radar_show : styles.radar_hide } />
+				
+				<Text style={ (this.state.flagNetwork) ? styles.viewed_hit_hide : styles.viewed_hit_show }> 
+					請開啟網路{'\n'}
+					Please open network.
 				</Text>
-		
+
 				<YouTube
 					videoId={ this.state.VideoId }
 					play={ !this.state.paused }
@@ -648,14 +677,14 @@ export default class MainFunction extends Component {
 					controls={ 0 }
 					loop={ false }
 					apiKey={ myYoutubeAPIKey }
-					style={ this.state.flagConnect ? styles.video_play : styles.video_paused }
+					style={ (this.state.flagConnect && this.state.flagNetwork) ? styles.video_play : styles.video_paused }
 					onChangeState={ (event) => { 
 					
 						//播放完畢時，暫停撥放
 						if(event.state == 'ended'){
 							
 							//讓目前IBeacon斷線
-							this.setState({paused: false, haveIB: false, playEndedFlag: true});
+							this.setState({paused: false, haveIB: false, playEndedFlag: true, flagFirstGuid: false});
 
 							//紀錄已撥放的影片數量
 							this.RecodViewedNumber();
@@ -701,15 +730,13 @@ const styles = StyleSheet.create({
 		height: deviceWidth,
 	},
 	video_paused:{
-		
+		//留白，播放不順利可維持畫面
 	},
 	radar_show:{
-		position: "absolute",
-        top:0,
-        right:0,
-		width: 100,
-		height: 100,
+		width: 250,
+		height: 250,
 		resizeMode: 'contain',
+		opacity: 0.7,
 	},
 	radar_hide:{
 		position: "absolute",
@@ -728,11 +755,6 @@ const styles = StyleSheet.create({
 		fontSize: 0,
 	},*/
 	viewed_hit_show:{
-		position: "absolute",
-        top:0,
-        bottom:0,
-        left:0,
-        right:0,
 		fontSize: 20,
 	},
 	viewed_hit_hide:{

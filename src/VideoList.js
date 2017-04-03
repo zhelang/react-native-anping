@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {View, Text, StyleSheet, Animated, Dimensions, ListView,TouchableOpacity , ScrollView,Image} from "react-native";
+import {View, Text, StyleSheet, Animated, Dimensions, ListView,TouchableOpacity , ScrollView, Image, BackAndroid, NetInfo} from "react-native";
 import {Actions} from 'react-native-router-flux';
 import RNFS from 'react-native-fs';
 import YouTube from 'react-native-youtube';
@@ -28,17 +28,23 @@ export default class extends React.Component {
         dataSource:ds.cloneWithRows([]),
         comingSoonTop:deviceHeight,
         showing:false,
+		flagNetwork:false,
 		
 		//影片播放器參數
-			isReady: null,
-			VideoStatus: null,
-			quality: null,
-			error: null,
-			paused: false,
-			video_id: '',
-			apikey: myYoutubeAPIKey,
-
+		isReady: null,
+		VideoStatus: null,
+		quality: null,
+		error: null,
+		paused: false,
+		video_id: '',
+		apikey: myYoutubeAPIKey,
       };
+	  
+	  //檢查是否有網路
+	  NetInfo.isConnected.fetch().then(isConnected => {
+		this.setState({flagNetwork: isConnected});
+		//console.warn("flagNetwork="+isConnected);
+	  });
 
 	  //ES6 class add functions
       this.fetchData = this.fetchData.bind(this);
@@ -82,7 +88,9 @@ export default class extends React.Component {
 		
 		RNFS.unlink(VIDEO_LIST_FILE).then(()=>{
 			//console.warn("清除成功");
-			Actions.welcome({popNum: 2,refresh: {}});//jump welcome
+			Actions.pop({popNum:2});
+			BackAndroid.exitApp();
+			//Actions.welcome({refresh: {}});
 			
 		})
 		.catch((err)=>{
@@ -115,11 +123,12 @@ export default class extends React.Component {
                 <Text style={styles.cellsTitle}>{rowData.title}</Text>
               </View>
 			  
-              <TouchableOpacity onPress={()=>{ if(rowData.unlocked){this.setState({paused: true, video_id: rowData.video_id})} }}>
+              <TouchableOpacity onPress={()=>{ if(rowData.unlocked&&this.state.flagNetwork){this.setState({paused: true, video_id: rowData.video_id})} }}>
 			  
                 <View style={ styles.thumbnailContainer }>
 					<Image style={ rowData.unlocked ? styles.thumbnail : styles.thumbnail_lock } source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
-					<Image style={ rowData.unlocked ? styles.lock_hide : styles.lock }source={ LOCK }/>
+					<Image style={ (!rowData.unlocked&&this.state.flagNetwork) ? styles.lock : styles.lock_hide }source={ LOCK }/>
+					<Text style={ !this.state.flagNetwork ? styles.opennetwork_show : styles.opennetwork_hide }>請開啟網路{'\n'}Please open network.</Text>
                 </View>
 				
               </TouchableOpacity>
@@ -286,14 +295,21 @@ const styles = StyleSheet.create({
   },
   lock:{
 	position:'absolute',
-    top:0,
-    right:0,
-	width: deviceWidth / 3.5 - 10,
-	height: deviceHeight / 2,  
+    top: (deviceHeight / 2)*0.5 - 64/2 ,
+    left: (deviceWidth / 3.5 - 10)/2 - (64/2),
+	width: 64,
+	height: 64, 
   },
   lock_hide:{
 	width:0,
 	height:0,
+  },
+  opennetwork_show:{
+	color: '#6b6b6b',
+	fontSize: 12,
+  },
+  opennetwork_hide:{
+	fontSize: 0,
   },
   cellsBodyContainer:{
     width:deviceWidth / 3.5,
