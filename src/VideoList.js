@@ -49,6 +49,7 @@ export default class extends React.Component {
 	  //ES6 class add functions
       this.fetchData = this.fetchData.bind(this);
 	  this.deleteVideoData = this.deleteVideoData.bind(this);
+	  this.backButtonFunction = this.backButtonFunction.bind(this);
 
   }//end constructor
 
@@ -80,6 +81,12 @@ export default class extends React.Component {
         }).done();
 		
   }//end fetch Data
+  
+  
+	//返回鍵
+	backButtonFunction(){
+		Actions.pop();
+	}
   
   
   
@@ -148,29 +155,22 @@ export default class extends React.Component {
 		<View style={ !this.state.paused ? {flex:1, backgroundColor:'#ffffff' } : styles.video_paused }>
 			<View style={{flex:1, backgroundColor:'#ececec' }}>
 			
-				<View style={ styles.title }>
-				
-					<TouchableOpacity style={  styles.backbuttonContainer } onPress={()=>{Actions.pop();}}>
+				<View style={styles.title}>
+					<TouchableOpacity style={  styles.backbuttonContainer } onPress={()=>{ this.backButtonFunction(); }}>
 						<View>
-							<Text>Back</Text>
+							<Text style={{color: "#4F4F4F"}}>Back</Text>
 						</View>
 					</TouchableOpacity>
-					
-					<Text style={ {color: "white",fontSize:20,fontWeight: "bold"} }>
-						安平海關AR導覽
-					</Text>
 					
 					<TouchableOpacity style={ styles.resetbuttonContainer } onPress={()=>{ this.deleteVideoData(); }}>
 						<View>
-							<Text>RESET</Text>
+							<Text style={{color: "#4F4F4F"}}>RESET</Text>
 						</View>
 					</TouchableOpacity>
-					
 				</View>
-				
 				  
-				  <View style={ styles.videoListContainer }>
-					  <ScrollView horizontal={true}>
+				<View style={ styles.videoListContainer }>
+					<ScrollView horizontal={true}>
 						<ListView
 						  horizontal={true}
 						  contentInset={{top:100}}
@@ -182,23 +182,21 @@ export default class extends React.Component {
 			</View>
 		
 			<YouTube
-						videoId={ this.state.video_id }
-						play={ this.state.paused }
-						hidden={ true }
-						playsInline={ true }
-						controls={ 1 }
-						loop={ false }
-						apiKey={ myYoutubeAPIKey }
-						style={ this.state.paused ? styles.video_play : styles.video_paused }
-						onChangeState={ (event) => { 
-						
-							//播放完畢時，暫停撥放
-							if(event.state == 'ended'){
-								this.setState({paused: false, video_id: ''});
-							}
-							
-						}}
-					/>
+				videoId={ this.state.video_id }
+				play={ this.state.paused }
+				hidden={ true }
+				playsInline={ true }
+				controls={ 1 }
+				loop={ false }
+				apiKey={ myYoutubeAPIKey }
+				style={ this.state.paused ? styles.video_play : styles.video_paused }
+				onChangeState={ (event) => { 
+					//播放完畢時，暫停撥放
+					if(event.state == 'ended'){
+						this.setState({paused: false, video_id: ''});
+					}	
+				}}
+			/>
 				
 		</View>
 
@@ -210,32 +208,32 @@ export default class extends React.Component {
 const styles = StyleSheet.create({
   title:{
 	  flex:0.1,
-	  backgroundColor:"#e6684b",
-	  justifyContent: "center",
-	  alignItems: "center",
+	  //backgroundColor:"#e6684b",
+	  //justifyContent: "center",
+	  //alignItems: "center",
 	  flexDirection: 'row',
+	  //borderColor:'yellow',
+	  //borderWidth:1,
    },
   backbuttonContainer:{
-	position:'absolute',
-    top:2,
-    left:2,
+	position: "absolute",
+	top: 10,
 	width: 50,
-	height: 30,
+	left: 10,
     justifyContent: 'center',
     alignItems: 'center',
     //borderColor:'green',
-    //borderWidth:2,
+    //borderWidth:1,
   },
   resetbuttonContainer:{
-	position:'absolute',
-    top:2,
-    right:2,
+	position: "absolute",
+    top: 10,
+    right: 10,
 	width: 50,
-	height: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    //borderColor:'green',
-    //borderWidth:2,
+    //borderColor:'red',
+    //borderWidth:1,
   },
   videoListContainer:{
 	flex: 0.9,
@@ -243,8 +241,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     //borderColor:'red',
     //borderWidth:2,
-	marginTop:10,
-    marginBottom:10,
+	//marginTop:10,
+    //marginBottom:10,
   },
   cellContainer:{
     width:deviceWidth / 3.5 + 10,
@@ -263,7 +261,6 @@ const styles = StyleSheet.create({
     marginTop:10,
     marginBottom:10,
     backgroundColor:'#ffffff',
-
     //borderColor:'purple',
     //borderWidth:2,
   },

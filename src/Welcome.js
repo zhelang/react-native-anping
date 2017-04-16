@@ -1,41 +1,26 @@
 import React from 'react';
-import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback , Image} from "react-native";
+import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback , Image, NetInfo} from "react-native";
 
 //Router API
 import {Actions} from 'react-native-router-flux';
-
 //檔案寫入 API
 import RNFS from 'react-native-fs';
+//Toast APi
+import Toast from "@remobile/react-native-toast";
 
 //引用圖片
 import Logo from '../drawable/logo.png';
-
 //儲存檔案位置
 const VIDEO_LIST_FILE = RNFS.DocumentDirectoryPath + '/vid_list.txt';
-
 //取得裝置螢幕大小
 var {
   height: deviceHeight,
   width: deviceWidth
 } = Dimensions.get("window");
+//開啟延遲時間
+const WELCOME_TIME = 3000;
 
-var styles = StyleSheet.create({
-    container: {
-        position: "absolute",
-        top:0,
-        bottom:0,
-        left:0,
-        right:0,
-        backgroundColor:"transparent",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-	logo:{
-		width: 175,
-		height: 175,
-		resizeMode: Image.resizeMode.contain,
-	},
-});
+
 
 export default class extends React.Component {
     constructor(props){
@@ -45,6 +30,12 @@ export default class extends React.Component {
         this.state = {
             offset: new Animated.Value(-deviceHeight)
         };
+		
+		NetInfo.isConnected.fetch().then(isConnected => {
+			if(!isConnected){
+				Toast.showShortBottom("Please Open Network.\n請開啟網路");
+			}
+		});
 		
 		this.jumpStartButtonPage = this.jumpStartButtonPage.bind(this);
 		this.jumpFirstGuidPage = this.jumpFirstGuidPage.bind(this);
@@ -86,7 +77,7 @@ export default class extends React.Component {
 			//跳轉MainFunctionPage
 			setTimeout(() => {
 				this.jumpStartButtonPage()  //origin Actions.home()
-			}, 2500);
+			}, WELCOME_TIME);
 			//console.warn("抓到Local資料囉");
                                                       
         }).catch((err)=>{
@@ -113,7 +104,7 @@ export default class extends React.Component {
 			
 			//跳轉初次導覽畫面
 			setTimeout(() => {
-				this.jumpFirstGuidPage()  //origin Actions.home()
+				this.jumpStartButtonPage()  //origin Actions.home()
 			}, 2500);
 			
         }).done();
@@ -157,3 +148,23 @@ export default class extends React.Component {
     }
 	
 }//end class
+
+
+
+var styles = StyleSheet.create({
+    container: {
+        position: "absolute",
+        top:0,
+        bottom:0,
+        left:0,
+        right:0,
+        backgroundColor:"transparent",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+	logo:{
+		width: 175,
+		height: 175,
+		resizeMode: Image.resizeMode.contain,
+	},
+});

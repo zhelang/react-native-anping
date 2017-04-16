@@ -5,12 +5,7 @@ import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback ,
 import {Actions} from "react-native-router-flux";
 
 //取得圖片位置
-import Arrow from '../drawable/ic_arr.png';
-import Button_One from '../drawable/btn_start_one.png';
-import Button_Four from '../drawable/btn_start_four.png';
 import VideoListBtnSrc from '../drawable/btn_video_list.png';
-//圖片陣列
-const BtnViewArray = [Button_One,Button_Four];
 
 //取得裝置螢幕大小
 var {
@@ -18,18 +13,28 @@ var {
   width: deviceWidth
 } = Dimensions.get("window");
 
+//倒數計時器
+var TIMER;
+//倒數器間隔=100ms
+const TIMER_INERVAL = 1000;
+const TIMER_TIME = 8;
+
+
+
 export default class extends React.Component {
     constructor(props){
         super (props);
 
         this.state = {
             offset: new Animated.Value(-deviceHeight),//畫面起始位置
-			ScanBtnSrc:  BtnViewArray[0] //按鈕初始效果
+			timer: TIMER_TIME, //倒數計時
+			flagGoScanPage: true
         };
 		
 		//JaveScript SE6 添加Function到此Class
 		this.playPressing = this.playPressing.bind(this);
 		this.jumpMainFunctionPage = this.jumpMainFunctionPage.bind(this);
+		this.goScanPage = this.goScanPage.bind(this);
 		
     }//end constructor
 	
@@ -52,16 +57,58 @@ export default class extends React.Component {
             duration: 150,
             toValue: 0
         }).start();
-    }
+		
+		this.goScanPage();
+
+    }//end componentDidMount
 	
 	
 	
+	//
+	goScanPage(){
+		
+		this.setState({flagGoScanPage: !this.state.flagGoScanPage});
+		if(this.state.flagGoScanPage){
+			//開始倒數
+			TIMER = setInterval(() => {
+				this.jumpMainFunctionPage()  
+			}, TIMER_INERVAL);
+		}else{
+			//暫停倒數
+			clearInterval(TIMER);
+		}//end if
+		
+	}//end goScanPage
+	
+	
+	
+	//
 	jumpMainFunctionPage(){
-		Actions.mainfunction_page();
-	}
+		
+		currentTime = this.state.timer - TIMER_INERVAL/1000;
+		if(currentTime<=0){
+			//clear timer
+			clearInterval(TIMER);
+			this.state = {
+				timer: TIMER_TIME, //倒數計時
+				flagGoScanPage: true
+			};
+			//跳轉頁面
+			Actions.pop();
+			Actions.startbutton_page();
+			Actions.mainfunction_page();
+		}else{
+			this.setState({
+				timer: currentTime,
+			});
+		}//end if
+		
+	}//end jumpMainFunctionPage()
 	
 	
 	jumpVideoListPage(){
+		//clear timer
+		clearInterval(TIMER);
 		Actions.videolist_page();
 	}
 	
@@ -92,28 +139,38 @@ export default class extends React.Component {
 	
 
 	//onPress={ Actions.videolistpage }
+	
+	/*橘色標題
+		<View style={styles.title}>
+			<Text style={{color: "white",fontSize:20,fontWeight: "bold"}}>
+				安平海關AR導覽
+			</Text>
+		</View>
+	*/
     render(){
         return (
             <View style={styles.container}>
-				<View style={styles.title}>
-					<Text style={{color: "white",fontSize:20,fontWeight: "bold"}}>
-						安平海關AR導覽
-					</Text>
-				</View>
+
 				
 				<View style={styles.photo}>
 				
 					<Text style={styles.context}>
-						按下按鈕後{'\n'}
 						請將手機放置"AR望眼鏡"中{'\n'}
 						將開始安平海關導覽！
 					</Text>
 					
-					<Image source={Arrow} style={styles.arrow} />
+					<TouchableWithoutFeedback onPress={ this.goScanPage }>
+						<View style={styles.GoScanPage_show}>
+							<Text style={ this.state.flagGoScanPage ? {fontSize: 20, color: "#4F4F4F"} : {fontSize: 0} }>
+								{ this.state.flagGoScanPage ? ">>" : null}
+							</Text>
+							<Text style={ !this.state.flagGoScanPage ? {fontSize: 20, color: "#4F4F4F"} : {fontSize: 0} }>
+								{ !this.state.flagGoScanPage ? this.state.timer : null }
+							</Text>
+						</View>
+					</TouchableWithoutFeedback>
 					
-					<TouchableWithoutFeedback  onPress={ this.jumpMainFunctionPage } onPressIn={ this.playPressing }>
-						<Image source={this.state.ScanBtnSrc} style={styles.ScanButton} />
-                    </TouchableWithoutFeedback>
+					
 					
 					<View style={styles.VideoListDiv}>
 						<TouchableWithoutFeedback onPress={ this.jumpVideoListPage }>
@@ -138,6 +195,7 @@ var styles = StyleSheet.create({
 	photo:{flex:0.9,justifyContent: "center",alignItems: "center"},
 	arrow:{width: 20,height: 20,resizeMode: Image.resizeMode.contain},
 	ScanButton:{width: 125,	height: 125,resizeMode: Image.resizeMode.contain},
+	GoScanPage_show:{position: "absolute", right: 35, bottom: 45},
 	VideoListDiv:{position: "absolute", left: 25, bottom: 25},
 	VideoListButton:{marginTop:20, width: 50, height: 50,resizeMode: Image.resizeMode.contain}
 });

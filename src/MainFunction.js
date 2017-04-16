@@ -28,6 +28,8 @@ import Sound from 'react-native-sound';
 import RNFS from 'react-native-fs';
 //ScreenBrightness API
 const { ScreenBrightness } = NativeModules;
+//Router API
+import {Actions} from 'react-native-router-flux';
 
 
 
@@ -118,7 +120,7 @@ export default class MainFunction extends Component {
 		  flagFirstGuid: false,
 		  
 		  //是否有開啟網路
-		  flagNetwork: false,
+		  flagNetwork: true,
 		  
 		  //影片播放器參數
 		  isReady: null,
@@ -134,7 +136,8 @@ export default class MainFunction extends Component {
 		//檢查是否有網路
 		NetInfo.isConnected.fetch().then(isConnected => {
 			this.setState({flagNetwork: isConnected});
-			//console.warn("flagNetwork="+isConnected);
+			//console.warn("isConnected = " + isConnected);
+			
 		});
 		
 		//抓取已閱覽紀錄
@@ -222,34 +225,24 @@ export default class MainFunction extends Component {
 		this.MaxCountIBeacons = this.MaxCountIBeacons.bind(this);
 		this.ResetBeaconCount = this.ResetBeaconCount.bind(this);
 		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
+		this.backButtonFunction = this.backButtonFunction.bind(this);
+		this.exitScan = this.exitScan.bind(this);
 		
 		//Android 返回鍵
 		BackAndroid.addEventListener('hardwareBackPress', ()=> {
 			
-			//釋放Timer
-			clearInterval(TIMER);
-			
-			//release Listener
-			this._beaconsDidRange.remove();
-			this._Accelerometer.remove();
-			
-			//關閉藍芽
-			BluetoothSerial.disable()
-			.then((res) => 
-				console.log("藍芽關閉成功"))
-			.catch((err) => 
-				console.log("藍芽關閉失敗 ${err}"));
-				
-			//復原亮度
-			ScreenBrightness.setBrightness(this.state.initScreenBrithness);
+			this.exitScan();
 	
 		});
 		
 		//FPS(ms)觸發一次，mainFlowControl()
-		TIMER = setInterval(() => { 
+		if(this.state.flagNetwork){
+			TIMER = setInterval(() => { 
 				//進入流程控制
 				this.mainFlowControl(); 
-		}, FPS);
+			}, FPS);
+		}//end if
+		
 	}//end constructor
 	
 	
@@ -269,28 +262,28 @@ export default class MainFunction extends Component {
 	
 	//Use this as an opportunity to operate on the DOM when the component has been updated. 
 	componentDidMount() {
-		
+
 		//開始加速器偵測(ms)
 		mSensorManager.startAccelerometer(acceleratorDetectionFrequency);
-		
+			
 		//加速器偵測事件
-		this._Accelerometer = DeviceEventEmitter.addListener('Accelerometer', (data) => 
-			this.onAccelerometerUpdate(data)
-		);
-		
+		this._Accelerometer = DeviceEventEmitter.addListener('Accelerometer', (data) => {
+			this.onAccelerometerUpdate(data);
+		});
+			
 		//強制開啟藍芽
 		BluetoothSerial.enable()
 		.then((res) => 
 			console.log("強制開啟藍芽成功"))
 		.catch((err) => 
 			console.log("強制開啟藍芽失敗 ${err}"));
-		
+			
 		//開始偵測iBeacon
 		Beacons.detectIBeacons();
-		
+			
 		//iBeacons的掃描的間隔時間(s)
 		Beacons.setBackgroundBetweenScanPeriod( bluetoothScanFrequency );
-		
+			
 		//開啟iBecons Ranging(測距)
 		Beacons.startRangingBeaconsInRegion('REGION1')
 		.then(() => 
@@ -299,17 +292,16 @@ export default class MainFunction extends Component {
 		.catch(error => 
 			console.log(`Beacons ranging not started, error: ${error}`)
 		);
-		
+			
 		//iBecons Ranging的事件
 		this._beaconsDidRange = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {
-				//console.warn("偵測到IBeacons");
-					
-				//儲存資料(data.beacons是陣列內容)
-				this.setState({beacons: data.beacons});
-					
-			}
-		);
-		
+			//console.warn("偵測到IBeacons");
+						
+			//儲存資料(data.beacons是陣列內容)
+			this.setState({beacons: data.beacons});
+						
+		});
+	
 	}//end componentDidMount()
 	
 	
@@ -651,16 +643,56 @@ export default class MainFunction extends Component {
 	
 	
 	
+	//返回鍵
+	backButtonFunction(){
+	
+		this.exitScan();
+		Actions.pop();
+		
+	}//end backButtonFunction()
+	
+	
+	
+	
+	
+	//exit scan ibeacons
+	exitScan(){
+		
+		
+		
+			//釋放Timer
+			clearInterval(TIMER);
+				
+			//release Listener
+			this._beaconsDidRange.remove();
+			this._Accelerometer.remove();
+				
+			//關閉藍芽
+			BluetoothSerial.disable()
+			.then((res) => 
+				console.log("藍芽關閉成功"))
+			.catch((err) => 
+				console.log("藍芽關閉失敗 ${err}"));
+			
+		//復原亮度
+		ScreenBrightness.setBrightness(this.state.initScreenBrithness);
+		
+	}//end exitScan()
+	
+	
+	
+	
+	
 	//渲染畫面	
-
-	/*已導覽資訊
-		<Text style={ (this.state.paused&&!this.state.flagConnect) ? styles.viewed_hit_show : styles.viewed_hit_hide }> 
-			{"已導覽: " + this.state.VideoISViewed + "/" + IBEACON_LENG } 
-		</Text>
-	*/
 	render() {
 		return (
 			<View style={styles.fullScreen}>
+			
+				<TouchableOpacity style={  styles.backbuttonContainer } onPress={()=>{ this.backButtonFunction(); }}>
+						<View>
+							<Text>Back</Text>
+						</View>
+				</TouchableOpacity>
 			
 				<Image source={Radar} style={ (this.state.paused&&!this.state.flagConnect&&this.state.flagNetwork) ? styles.radar_show : styles.radar_hide } />
 				
@@ -679,20 +711,15 @@ export default class MainFunction extends Component {
 					apiKey={ myYoutubeAPIKey }
 					style={ (this.state.flagConnect && this.state.flagNetwork) ? styles.video_play : styles.video_paused }
 					onChangeState={ (event) => { 
-					
 						//播放完畢時，暫停撥放
 						if(event.state == 'ended'){
-							
 							//讓目前IBeacon斷線
 							this.setState({paused: false, haveIB: false, playEndedFlag: true, flagFirstGuid: false});
-
 							//紀錄已撥放的影片數量
 							this.RecodViewedNumber();
-						}
-						
+						}//end if
 					}}
 				/>
-			
 			</View>
 		);
 	}//end render()	
@@ -731,6 +758,16 @@ const styles = StyleSheet.create({
 	},
 	video_paused:{
 		//留白，播放不順利可維持畫面
+	},
+	backbuttonContainer:{
+		position: "absolute",
+		top: 10,
+		width: 50,
+		left: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+		//borderColor:'green',
+		//borderWidth:1,
 	},
 	radar_show:{
 		width: 250,
