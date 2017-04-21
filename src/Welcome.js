@@ -28,7 +28,7 @@ export default class extends React.Component {
 
 		//畫面起始位置
         this.state = {
-            offset: new Animated.Value(-deviceHeight)
+            offset: new Animated.Value(0)
         };
 		
 		NetInfo.isConnected.fetch().then(isConnected => {
@@ -38,9 +38,9 @@ export default class extends React.Component {
 		});
 		
 		this.jumpStartButtonPage = this.jumpStartButtonPage.bind(this);
-		this.jumpFirstGuidPage = this.jumpFirstGuidPage.bind(this);
 		this.fetchVideoData = this.fetchVideoData.bind(this);
-    }
+		
+    }//end constructor
 
 	
 	
@@ -58,12 +58,6 @@ export default class extends React.Component {
 	
 	
     componentDidMount() {
-		
-		//開啟此頁面(WelcomePage)特效
-        Animated.timing(this.state.offset, {
-            duration: 150,
-            toValue: 0
-        }).start();
 	
     }
 
@@ -74,10 +68,11 @@ export default class extends React.Component {
 
 		//抓取記事本內容(JSON格式)
         RNFS.readFile(VIDEO_LIST_FILE).then((content)=>{    
-			//跳轉MainFunctionPage
+			
 			setTimeout(() => {
 				this.jumpStartButtonPage()  //origin Actions.home()
 			}, WELCOME_TIME);
+			
 			//console.warn("抓到Local資料囉");
                                                       
         }).catch((err)=>{
@@ -102,48 +97,33 @@ export default class extends React.Component {
 
 			RNFS.writeFile(filePath , JSON.stringify(vid_info) , 'utf8').then((success)=>{console.log('File WRITTEN:'+filePath);}).catch((err)=>console.warn(err.message));                                                       
 			
-			//跳轉初次導覽畫面
 			setTimeout(() => {
 				this.jumpStartButtonPage()  //origin Actions.home()
-			}, 2500);
+			}, WELCOME_TIME);
 			
         }).done();
+		
 	}//end fetchVideoData()
 	
 	
 	
 	jumpStartButtonPage(){
-		Actions.startbutton_page();
+		Actions.pop();
 	}
-	
-	
-	
-	jumpFirstGuidPage(){
-		Actions.firstguid_page();
-	}
-	
-	
-	
-	componentWillReceiveProps(){
 
-	}
-	
+
 	
     render(){
         return (
-            <Animated.View style={[styles.container, {backgroundColor:"#FFFFFF"},
-                                  {transform: [{translateY: this.state.offset}]}]}>
-				
+            <View style={[styles.container, {backgroundColor:"#FFFFFF"}]}>
                     <View style={{  width:deviceWidth,
                                     height:deviceHeight,
                                     justifyContent: "center",
                                     alignItems: "center",
                                     backgroundColor:"white" }}>
-								
 						<Image source={Logo} style={styles.logo}/>				
-						
                     </View>
-            </Animated.View>
+            </View>
         );
     }
 	

@@ -14,6 +14,7 @@ import { Scene, Router, TabBar, Modal, Schema, Actions, Reducer, ActionConst } f
 //引入要切換的畫面
 import Welcome from './src/Welcome';
 import StartButton from './src/StartButton';
+import HintGuide from './src/HintGuide';
 import MainFunctionPage from './src/MainFunction';
 import VideoListPage from './src/VideoList';
 
@@ -36,10 +37,11 @@ const reducerCreate = params=>{
 export default class Anping_V002 extends Component {
   render() {
     return (
-        <Router createReducer={reducerCreate} sceneStyle={{backgroundColor:'#F7F7F7'}} navigationBarStyle={{backgroundColor:'#7db732'}} >
+        <Router createReducer={reducerCreate} sceneStyle={{backgroundColor:'#FFFFFF'}} navigationBarStyle={{backgroundColor:'#FFFFFF'}} >
             <Scene key="root" hideNavBar={true}>
-                <Scene key="welcome" component={Welcome} title="Welcome" initial={true}/>
-				<Scene key="startbutton_page" component={StartButton} title="Start"/>
+				<Scene key="startbutton_page" component={StartButton} title="StartButton" initial={true}/>
+				<Scene key="welcome" component={Welcome} title="Welcome"/>
+				<Scene key="hintguide_page" component={HintGuide} title="HintGuide"/>
 				<Scene key="mainfunction_page" component={MainFunctionPage} title="MainFunctionPage"/>
 				<Scene key="videolist_page" component={VideoListPage} title="VideoListPage"/>
             </Scene>

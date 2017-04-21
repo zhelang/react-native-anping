@@ -77,8 +77,10 @@ var IBEACON_LENG;
 
 
 
-//存放Timer，Relax時會用到
+//Listener
 var TIMER;
+var BeaconsDidRange_Listener;
+var Accelerometer_Listener;
 
 
 
@@ -215,59 +217,11 @@ export default class MainFunction extends Component {
 		};
 		this.SetMAXScreenBrightness();
 		
-		//JavaScript ES6 添加function到此class
-		this.onAccelerometerUpdate = this.onAccelerometerUpdate.bind(this);
-		this.coutDectIBeacons = this.coutDectIBeacons.bind(this);
-		this.pickVideoId = this.pickVideoId.bind(this);
-		this.judgePlayVideo = this.judgePlayVideo.bind(this);
-		this.judgeDisconnect = this.judgeDisconnect.bind(this);
-		this.mainFlowControl = this.mainFlowControl.bind(this);
-		this.MaxCountIBeacons = this.MaxCountIBeacons.bind(this);
-		this.ResetBeaconCount = this.ResetBeaconCount.bind(this);
-		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
-		this.backButtonFunction = this.backButtonFunction.bind(this);
-		this.exitScan = this.exitScan.bind(this);
-		
-		//Android 返回鍵
-		BackAndroid.addEventListener('hardwareBackPress', ()=> {
-			
-			this.exitScan();
-	
-		});
-		
-		//FPS(ms)觸發一次，mainFlowControl()
-		if(this.state.flagNetwork){
-			TIMER = setInterval(() => { 
-				//進入流程控制
-				this.mainFlowControl(); 
-			}, FPS);
-		}//end if
-		
-	}//end constructor
-	
-	
-	
-	
-	//Use this as an opportunity to perform preparation before an update occurs. 
-	componentWillMount() {
-		//
-		// ONLY non component state aware here in componentWillMount
-		//
-		
-	}
-
-	
-	
-	
-	
-	//Use this as an opportunity to operate on the DOM when the component has been updated. 
-	componentDidMount() {
-
 		//開始加速器偵測(ms)
 		mSensorManager.startAccelerometer(acceleratorDetectionFrequency);
 			
 		//加速器偵測事件
-		this._Accelerometer = DeviceEventEmitter.addListener('Accelerometer', (data) => {
+		Accelerometer_Listener = DeviceEventEmitter.addListener('Accelerometer', (data) => {
 			this.onAccelerometerUpdate(data);
 		});
 			
@@ -294,13 +248,62 @@ export default class MainFunction extends Component {
 		);
 			
 		//iBecons Ranging的事件
-		this._beaconsDidRange = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {
+		BeaconsDidRange_Listener = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {
 			//console.warn("偵測到IBeacons");
 						
 			//儲存資料(data.beacons是陣列內容)
 			this.setState({beacons: data.beacons});
 						
 		});
+		
+		//JavaScript ES6 添加function到此class
+		this.onAccelerometerUpdate = this.onAccelerometerUpdate.bind(this);
+		this.coutDectIBeacons = this.coutDectIBeacons.bind(this);
+		this.pickVideoId = this.pickVideoId.bind(this);
+		this.judgePlayVideo = this.judgePlayVideo.bind(this);
+		this.judgeDisconnect = this.judgeDisconnect.bind(this);
+		this.mainFlowControl = this.mainFlowControl.bind(this);
+		this.MaxCountIBeacons = this.MaxCountIBeacons.bind(this);
+		this.ResetBeaconCount = this.ResetBeaconCount.bind(this);
+		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
+		this.backButtonFunction = this.backButtonFunction.bind(this);
+		this.exitScan = this.exitScan.bind(this);
+		
+		//Android 返回鍵
+		BackAndroid.addEventListener('hardwareBackPress', ()=>{
+			this.exitScan();
+		});
+		
+		//FPS(ms)觸發一次，mainFlowControl()
+		if(this.state.flagNetwork){
+			TIMER = setInterval(() => { 
+				//進入流程控制
+				this.mainFlowControl(); 
+			}, FPS);
+		}//end if
+		
+	}//end constructor
+	
+	
+	
+	
+	
+	//Use this as an opportunity to perform preparation before an update occurs. 
+	componentWillMount() {
+		//
+		// ONLY non component state aware here in componentWillMount
+		//
+		
+	}
+
+	
+	
+	
+	
+	//Use this as an opportunity to operate on the DOM when the component has been updated. 
+	componentDidMount() {
+	
+	
 	
 	}//end componentDidMount()
 	
@@ -657,22 +660,20 @@ export default class MainFunction extends Component {
 	
 	//exit scan ibeacons
 	exitScan(){
-		
-		
-		
-			//釋放Timer
-			clearInterval(TIMER);
+
+		//釋放Timer
+		clearInterval(TIMER);
 				
-			//release Listener
-			this._beaconsDidRange.remove();
-			this._Accelerometer.remove();
+		//Release Listener
+		BeaconsDidRange_Listener.remove();
+		Accelerometer_Listener.remove();
 				
-			//關閉藍芽
-			BluetoothSerial.disable()
-			.then((res) => 
-				console.log("藍芽關閉成功"))
-			.catch((err) => 
-				console.log("藍芽關閉失敗 ${err}"));
+		//關閉藍芽
+		BluetoothSerial.disable()
+		.then((res) => 
+			console.log("藍芽關閉成功"))
+		.catch((err) => 
+			console.log("藍芽關閉失敗 ${err}"));
 			
 		//復原亮度
 		ScreenBrightness.setBrightness(this.state.initScreenBrithness);
