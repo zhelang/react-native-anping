@@ -39,8 +39,8 @@ export default class Anping_V002 extends Component {
     return (
         <Router createReducer={reducerCreate} sceneStyle={{backgroundColor:'#FFFFFF'}} navigationBarStyle={{backgroundColor:'#FFFFFF'}} >
             <Scene key="root" hideNavBar={true}>
-				<Scene key="startbutton_page" component={StartButton} title="StartButton" initial={true}/>
-				<Scene key="welcome" component={Welcome} title="Welcome"/>
+				<Scene key="startbutton_page" component={StartButton} title="StartButton" initial={true} />
+				<Scene key="welcome" component={Welcome} title="Welcome" direction="vertical"/>
 				<Scene key="hintguide_page" component={HintGuide} title="HintGuide"/>
 				<Scene key="mainfunction_page" component={MainFunctionPage} title="MainFunctionPage"/>
 				<Scene key="videolist_page" component={VideoListPage} title="VideoListPage"/>

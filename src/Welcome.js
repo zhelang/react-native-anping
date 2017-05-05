@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback , Image, NetInfo} from "react-native";
+import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback , Image, NetInfo, BackAndroid} from "react-native";
 
 //Router API
 import {Actions} from 'react-native-router-flux';
@@ -19,6 +19,7 @@ var {
 } = Dimensions.get("window");
 //開啟延遲時間
 const WELCOME_TIME = 3000;
+var TIMER;
 
 
 
@@ -30,13 +31,7 @@ export default class extends React.Component {
         this.state = {
             offset: new Animated.Value(0)
         };
-		
-		NetInfo.isConnected.fetch().then(isConnected => {
-			if(!isConnected){
-				Toast.showShortBottom("Please Open Network.\n請開啟網路");
-			}
-		});
-		
+
 		this.jumpStartButtonPage = this.jumpStartButtonPage.bind(this);
 		this.fetchVideoData = this.fetchVideoData.bind(this);
 		
@@ -48,18 +43,27 @@ export default class extends React.Component {
 	
     componentWillMount(){
 		
-		//預先抓取資料
-		this.fetchVideoData();
-		
-    }
+    }//end componentWillMount
 
 	
 	
 	
 	
     componentDidMount() {
-	
-    }
+		//預先抓取資料
+		this.fetchVideoData();
+		NetInfo.isConnected.fetch().then(isConnected => {
+			if(!isConnected){
+				Toast.showShortBottom("Please Open Network.\n請開啟網路");
+			}
+		});
+		//Android 返回鍵
+		BackAndroid.addEventListener('hardwareBackPress', ()=>{
+			if(TIMER!=null){
+				clearTimeout(TIMER);
+			}
+		});
+    }//end componentDidMount
 
 	
 	
@@ -69,7 +73,7 @@ export default class extends React.Component {
 		//抓取記事本內容(JSON格式)
         RNFS.readFile(VIDEO_LIST_FILE).then((content)=>{    
 			
-			setTimeout(() => {
+			TIMER = setTimeout(() => {
 				this.jumpStartButtonPage()  //origin Actions.home()
 			}, WELCOME_TIME);
 			
@@ -82,22 +86,23 @@ export default class extends React.Component {
 			
 			var filePath =  VIDEO_LIST_FILE;
 			var vid_info = [
-                            {title:'number 1' , 'body':'This is vid 1' , vid:1 , unlocked:false , 'video_id': '2x5XUlLbvn8' , "major" : "10001" , "minor" : "1000"},
-                            {title:'number 2' , 'body':'This is vid 2' , vid:2 , unlocked:false , 'video_id': 'T5i-MDRfEYI' , "major" : "10001" , "minor" : "1001"},
-                            {title:'number 3' , 'body':'This is vid 3' , vid:3 , unlocked:false , 'video_id': '8yOvsVQKJMs' , "major" : "10001" , "minor" : "1002"},
-                            {title:'number 4' , 'body':'This is vid 4' , vid:4 , unlocked:false , 'video_id': 's-m_9RmUNNU' , "major" : "10001" , "minor" : "1003"},
-                            {title:'number 5' , 'body':'This is vid 5' , vid:5 , unlocked:false , 'video_id': 'sMyHnZ4lV54' , "major" : "10001" , "minor" : "1004"},
-							{title:'number 6' , 'body':'This is vid 6' , vid:6 , unlocked:false , 'video_id': 'oleKA8j841w' , "major" : "10001" , "minor" : "1005"},
-                            {title:'number 7' , 'body':'This is vid 7' , vid:7 , unlocked:false , 'video_id': 'A8NlljMtsIY' , "major" : "10001" , "minor" : "1006"},
-                            {title:'number 8' , 'body':'This is vid 8' , vid:8 , unlocked:false , 'video_id': '4cjrYBj81Ko' , "major" : "10001" , "minor" : "1007"},
-							{title:'number 9' , 'body':'This is vid 9' , vid:9 , unlocked:false , 'video_id': '4cjrYBj81Ko' , "major" : "61577" , "minor" : "38355"},
+                            {title:'Video1' , 'body':'長型辦事桌' , vid:1 , unlocked:false , 'video_id': 'mN29xGSK3po' , "major" : "10001" , "minor" : "1000"},
+                            {title:'Video2' , 'body':'安平海關名稱演變' , vid:2 , unlocked:false , 'video_id': 'PAsQAvi8-3Y' , "major" : "10001" , "minor" : "1001"},
+                            {title:'Video3' , 'body':'海關屋頂' , vid:3 , unlocked:false , 'video_id': 'N_Mc77T_LG0' , "major" : "10001" , "minor" : "1002"},
+                            {title:'Video4' , 'body':'海關天花板' , vid:4 , unlocked:false , 'video_id': 'jFX83WI9y0E' , "major" : "10001" , "minor" : "1003"},
+                            {title:'Video5' , 'body':'人員休息室\n廣播室' , vid:5 , unlocked:false , 'video_id': 'JXJgtAF-2QI' , "major" : "10001" , "minor" : "1004"},
+							{title:'Video6' , 'body':'報關室' , vid:6 , unlocked:false , 'video_id': 'IjDaMvYsE4E' , "major" : "10001" , "minor" : "1005"},
+                            {title:'Video7' , 'body':'礙子' , vid:7 , unlocked:false , 'video_id': 'khz1S5qEEus' , "major" : "10001" , "minor" : "1006"},
+                            {title:'Video8' , 'body':'編竹夾泥牆' , vid:8 , unlocked:false , 'video_id': 'CpbCjoADc8U' , "major" : "10001" , "minor" : "1007"},
+							{title:'Video9' , 'body':'日式玻璃工坊' , vid:9 , unlocked:false , 'video_id': 'iYr0taFGaag' , "major" : "10001" , "minor" : "1008"},
+							{title:'Video10' , 'body':'海關工作流程：機船進出、報關繳稅' , vid:10 , unlocked:false , 'video_id': '-j8lrgMWP2A' , "major" : "10001" , "minor" : "1009"},
 			];
 			
 			console.log("ERROR MESSAGE:"+err);
 
 			RNFS.writeFile(filePath , JSON.stringify(vid_info) , 'utf8').then((success)=>{console.log('File WRITTEN:'+filePath);}).catch((err)=>console.warn(err.message));                                                       
 			
-			setTimeout(() => {
+			TIMER = setTimeout(() => {
 				this.jumpStartButtonPage()  //origin Actions.home()
 			}, WELCOME_TIME);
 			

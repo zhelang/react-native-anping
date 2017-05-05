@@ -10,7 +10,11 @@ var {
 } = Dimensions.get("window");
 
 //引用圖片
-import LOCK from '../drawable/lock.png';
+import IC_LOCK from '../drawable/ic_lock.png';
+import IC_PLAY from '../drawable/btn_play.png';
+import IC_BACK from '../drawable/btn_back.png';
+import BackGround_Image from '../drawable/bg_list.png';
+
 //抓取記事本
 const VIDEO_LIST_FILE = RNFS.DocumentDirectoryPath + '/vid_list.txt';
 //Youtube API Key
@@ -31,20 +35,9 @@ export default class extends React.Component {
 		flagNetwork:false,
 		
 		//影片播放器參數
-		isReady: null,
-		VideoStatus: null,
-		quality: null,
-		error: null,
 		paused: false,
 		video_id: '',
-		apikey: myYoutubeAPIKey,
       };
-	  
-	  //檢查是否有網路
-	  NetInfo.isConnected.fetch().then(isConnected => {
-		this.setState({flagNetwork: isConnected});
-		//console.warn("flagNetwork="+isConnected);
-	  });
 
 	  //ES6 class add functions
       this.fetchData = this.fetchData.bind(this);
@@ -55,10 +48,19 @@ export default class extends React.Component {
 
   
   
-  componentWillMount() {
-	//抓取資料
-    this.fetchData();
-  }
+	componentWillMount() {
+	
+	}
+  
+	componentDidMount(){
+		//抓取資料
+		this.fetchData();
+		//檢查是否有網路
+		NetInfo.isConnected.fetch().then(isConnected => {
+			this.setState({flagNetwork: isConnected});
+			//console.warn("flagNetwork="+isConnected);
+		});
+	}//end componentDidMount
 
   
   
@@ -134,7 +136,7 @@ export default class extends React.Component {
 			  
                 <View style={ styles.thumbnailContainer }>
 					<Image style={ rowData.unlocked ? styles.thumbnail : styles.thumbnail_lock } source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
-					<Image style={ (!rowData.unlocked&&this.state.flagNetwork) ? styles.lock : styles.lock_hide }source={ LOCK }/>
+					<Image style={ styles.lock }source={ (!rowData.unlocked&&this.state.flagNetwork) ? IC_LOCK : IC_PLAY }/>
 					<Text style={ !this.state.flagNetwork ? styles.opennetwork_show : styles.opennetwork_hide }>請開啟網路{'\n'}Please open network.</Text>
                 </View>
 				
@@ -152,23 +154,16 @@ export default class extends React.Component {
 
   render(){
     return(
-		<View style={ !this.state.paused ? {flex:1, backgroundColor:'#ffffff' } : styles.video_paused }>
-			<View style={{flex:1, backgroundColor:'#ececec' }}>
-			
+		<View style={ !this.state.paused ? {flex:1, backgroundColor:'#ffffff'} : styles.video_paused } >
+		
+			<Image source={BackGround_Image} style={{position: "absolute", left:0, bottom:0, width: deviceWidth, height: deviceWidth/4, resizeMode: Image.resizeMode.contain,  borderWidth:1,}}/>
+		
+			<View style={ styles.container }>
 				<View style={styles.title}>
 					<TouchableOpacity style={  styles.backbuttonContainer } onPress={()=>{ this.backButtonFunction(); }}>
-						<View>
-							<Text style={{color: "#4F4F4F"}}>Back</Text>
-						</View>
-					</TouchableOpacity>
-					
-					<TouchableOpacity style={ styles.resetbuttonContainer } onPress={()=>{ this.deleteVideoData(); }}>
-						<View>
-							<Text style={{color: "#4F4F4F"}}>RESET</Text>
-						</View>
+						<Image style={{width: 30,resizeMode: Image.resizeMode.contain}} source={IC_BACK}/>
 					</TouchableOpacity>
 				</View>
-				  
 				<View style={ styles.videoListContainer }>
 					<ScrollView horizontal={true}>
 						<ListView
@@ -176,9 +171,11 @@ export default class extends React.Component {
 						  contentInset={{top:100}}
 						  dataSource={this.state.dataSource}
 						  renderRow={(rowData , sectionID , rowID , highlightRow) => this._renderRow(rowData , sectionID , rowID , highlightRow) }
+						  style={{marginLeft:20,marginRight:20}}
+						  enableEmptySections={true}
 						 />
-					  </ScrollView>
-				  </View>
+					</ScrollView>
+				</View>
 			</View>
 		
 			<YouTube
@@ -206,8 +203,12 @@ export default class extends React.Component {
 }
 
 const styles = StyleSheet.create({
+	container:{
+		//flexDirection: "column",
+		flex:1,
+	},
   title:{
-	  flex:0.1,
+	  flex:0.15,
 	  //backgroundColor:"#e6684b",
 	  //justifyContent: "center",
 	  //alignItems: "center",
@@ -217,26 +218,16 @@ const styles = StyleSheet.create({
    },
   backbuttonContainer:{
 	position: "absolute",
-	top: 10,
+	top: 0,
+	left: 15,
 	width: 50,
-	left: 10,
     justifyContent: 'center',
     alignItems: 'center',
     //borderColor:'green',
     //borderWidth:1,
   },
-  resetbuttonContainer:{
-	position: "absolute",
-    top: 10,
-    right: 10,
-	width: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    //borderColor:'red',
-    //borderWidth:1,
-  },
   videoListContainer:{
-	flex: 0.9,
+	flex: 0.85,
     justifyContent: 'center',
     alignItems: 'center',
     //borderColor:'red',
@@ -249,20 +240,19 @@ const styles = StyleSheet.create({
     height:deviceHeight,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor:'#ececec',
     //borderColor:'blue',
     //borderWidth:2,
   },
   cell:{
     width:deviceWidth / 3.5,
-    height:deviceHeight - 80,
+    height:deviceHeight/1.5,
     justifyContent: 'flex-start',
     alignItems: 'center',
     marginTop:10,
     marginBottom:10,
     backgroundColor:'#ffffff',
-    //borderColor:'purple',
-    //borderWidth:2,
+    borderColor:'#C7C7C7',
+    borderWidth:1,
   },
   cellsTitleContainer:{
     height:30,
@@ -272,30 +262,31 @@ const styles = StyleSheet.create({
     //borderWidth:2,
   },
   cellsTitle:{
-    fontWeight:"500",
-    fontSize:16,
+    fontWeight:"400",
+    fontSize: 20,
+	color: "#585858",
   },
   thumbnailContainer:{
     justifyContent: 'center',
     alignItems: 'center',
   },
   thumbnail:{
-    height:deviceHeight / 2,
+    height:deviceHeight / 2.5,
     width:deviceWidth / 3.5 - 10,
     resizeMode:'contain',
   },
   thumbnail_lock:{
-	height:deviceHeight / 2,
+	height:deviceHeight / 2.5,
     width:deviceWidth / 3.5 - 10,
     resizeMode:'contain',
-	opacity: 0.5,/*影片縮圖被鎖時的透明度*/
+	opacity: 0.25,/*影片縮圖被鎖時的透明度*/
   },
   lock:{
 	position:'absolute',
     top: (deviceHeight / 2)*0.5 - 64/2 ,
     left: (deviceWidth / 3.5 - 10)/2 - (64/2),
-	width: 64,
-	height: 64, 
+	height: 32, 
+	resizeMode: Image.resizeMode.contain,
   },
   lock_hide:{
 	width:0,
@@ -309,14 +300,14 @@ const styles = StyleSheet.create({
 	fontSize: 0,
   },
   cellsBodyContainer:{
-    width:deviceWidth / 3.5,
-    marginTop:10,
+    width:deviceWidth / 3.5 - 10,
     //borderColor:'green',
     //borderWidth:2,
   },
   cellsBody:{
     fontWeight:"200",
-    fontSize:14,
+    fontSize: 15,
+	color: "#585858",
   },
   video_play:{
 		width: deviceWidth,

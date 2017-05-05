@@ -30,9 +30,7 @@ export default class extends React.Component {
 		
 		this.jumpHintGuidePage = this.jumpHintGuidePage.bind(this);
 		this.jumpVideoListPage = this.jumpVideoListPage.bind(this);
-		
-		//WelcomePage
-		Actions.welcome();
+		this.changeStartButton = this.changeStartButton.bind(this);
 		
     }//end constructor
 	
@@ -49,17 +47,15 @@ export default class extends React.Component {
 	
 
     componentDidMount() {
-
-	
-	
+		//WelcomePage
+		Actions.welcome();
     }//end componentDidMount
 	
 	
 	
 	jumpHintGuidePage(){
-		this.setState({StartButtonImage: StartButton2});
 		Actions.hintguide_page();
-		this.setState({StartButtonImage: StartButton1});
+		;
 	}
 	
 	
@@ -67,8 +63,18 @@ export default class extends React.Component {
 	jumpVideoListPage(){
 		Actions.videolist_page();
 	}
-
 	
+	
+	
+	changeStartButton(){
+		if(this.state.StartButtonImage == StartButton1 ){
+			this.setState({StartButtonImage: StartButton2});
+		}else{
+			this.setState({StartButtonImage: StartButton1});
+		}
+	}//end changeStartButton
+	
+
 	
     render(){
         return (
@@ -80,7 +86,7 @@ export default class extends React.Component {
 					
 					<Image source={Arrow_Image} style={styles.Arrow}/>
 					
-					<TouchableWithoutFeedback onPress={ this.jumpHintGuidePage }>
+					<TouchableWithoutFeedback onPressOut={ this.changeStartButton } onPressIn={ this.changeStartButton } onPress={ this.jumpHintGuidePage } >
 						<Image source={this.state.StartButtonImage} style={styles.StartButton}/>
 					</TouchableWithoutFeedback>
 					
