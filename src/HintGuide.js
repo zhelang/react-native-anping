@@ -27,8 +27,6 @@ export default class extends React.Component {
 		
 		//JaveScript SE6 添加Function到此Class
 		this.jumpMainFunctionPage = this.jumpMainFunctionPage.bind(this);
-		
-		
     }
 	
 	
@@ -45,12 +43,6 @@ export default class extends React.Component {
 		TIMER = setInterval(() => {
 			this.jumpMainFunctionPage()  //origin Actions.home()
 		}, TIMER_INERVAL);
-		//Android 返回鍵
-		BackAndroid.addEventListener('hardwareBackPress', ()=>{
-			if(TIMER!=null){
-				clearInterval(TIMER);
-			}
-		});
 	
     }//end componentDidMount
 	
@@ -125,6 +117,14 @@ export default class extends React.Component {
            </View>
         );
     }//end render
+	
+	
+	
+	componentWillUnmount(){
+		if(TIMER!=null){
+			clearInterval(TIMER);
+		}
+	}//end componentWillUnmount
 	
 }//end class {this.state.timer}...
 

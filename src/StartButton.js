@@ -3,6 +3,8 @@ import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback ,
 
 //Router API
 import {Actions} from "react-native-router-flux";
+//藍芽串流 API引用
+import BluetoothSerial from 'react-native-bluetooth-serial';
 
 //取得圖片位置
 import BackGround_Image from '../drawable/home_bg.png';
@@ -41,21 +43,26 @@ export default class extends React.Component {
     componentWillMount(){
 
     }
-	
-	
-	
+
 	
 
     componentDidMount() {
 		//WelcomePage
 		Actions.welcome();
+		
+		//強制開啟藍芽
+		BluetoothSerial.enable()
+		.then((res) => 
+			console.log("強制開啟藍芽成功"))
+		.catch((err) => 
+			console.log("強制開啟藍芽失敗 ${err}"));
+		
     }//end componentDidMount
 	
 	
 	
 	jumpHintGuidePage(){
 		Actions.hintguide_page();
-		;
 	}
 	
 	
@@ -102,6 +109,17 @@ export default class extends React.Component {
            </Image>
         );
     }//end render
+	
+	
+	
+	componentWillUnmount(){
+		//關閉藍芽
+		BluetoothSerial.disable()
+		.then((res) => 
+			console.log("藍芽關閉成功"))
+		.catch((err) => 
+			console.log("藍芽關閉失敗 ${err}"));
+	}//end componentWillUnMount()
 	
 }//end class
 

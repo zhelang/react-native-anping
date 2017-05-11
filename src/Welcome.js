@@ -57,12 +57,6 @@ export default class extends React.Component {
 				Toast.showShortBottom("Please Open Network.\n請開啟網路");
 			}
 		});
-		//Android 返回鍵
-		BackAndroid.addEventListener('hardwareBackPress', ()=>{
-			if(TIMER!=null){
-				clearTimeout(TIMER);
-			}
-		});
     }//end componentDidMount
 
 	
@@ -86,16 +80,16 @@ export default class extends React.Component {
 			
 			var filePath =  VIDEO_LIST_FILE;
 			var vid_info = [
-                            {title:'Video1' , 'body':'長型辦事桌' , vid:1 , unlocked:false , 'video_id': 'mN29xGSK3po' , "major" : "10001" , "minor" : "1000"},
-                            {title:'Video2' , 'body':'安平海關名稱演變' , vid:2 , unlocked:false , 'video_id': 'PAsQAvi8-3Y' , "major" : "10001" , "minor" : "1001"},
-                            {title:'Video3' , 'body':'海關屋頂' , vid:3 , unlocked:false , 'video_id': 'N_Mc77T_LG0' , "major" : "10001" , "minor" : "1002"},
-                            {title:'Video4' , 'body':'海關天花板' , vid:4 , unlocked:false , 'video_id': 'jFX83WI9y0E' , "major" : "10001" , "minor" : "1003"},
-                            {title:'Video5' , 'body':'人員休息室\n廣播室' , vid:5 , unlocked:false , 'video_id': 'JXJgtAF-2QI' , "major" : "10001" , "minor" : "1004"},
-							{title:'Video6' , 'body':'報關室' , vid:6 , unlocked:false , 'video_id': 'IjDaMvYsE4E' , "major" : "10001" , "minor" : "1005"},
-                            {title:'Video7' , 'body':'礙子' , vid:7 , unlocked:false , 'video_id': 'khz1S5qEEus' , "major" : "10001" , "minor" : "1006"},
-                            {title:'Video8' , 'body':'編竹夾泥牆' , vid:8 , unlocked:false , 'video_id': 'CpbCjoADc8U' , "major" : "10001" , "minor" : "1007"},
-							{title:'Video9' , 'body':'日式玻璃工坊' , vid:9 , unlocked:false , 'video_id': 'iYr0taFGaag' , "major" : "10001" , "minor" : "1008"},
-							{title:'Video10' , 'body':'海關工作流程：機船進出、報關繳稅' , vid:10 , unlocked:false , 'video_id': '-j8lrgMWP2A' , "major" : "10001" , "minor" : "1009"},
+                            {title:'海關緣起' , 'body':'' , vid:1 , unlocked:false , 'video_id': 'PAsQAvi8-3Y' , "major" : "10001" , "minor" : "1001"},
+                            {title:'長型辦事桌' , 'body':'' , vid:2 , unlocked:false , 'video_id': 'mN29xGSK3po' , "major" : "10001" , "minor" : "1000"},
+                            {title:'外部屋頂' , 'body':'' , vid:3 , unlocked:false , 'video_id': 'N_Mc77T_LG0' , "major" : "10001" , "minor" : "1002"},
+                            {title:'內部天花板' , 'body':'' , vid:4 , unlocked:false , 'video_id': 'jFX83WI9y0E' , "major" : "10001" , "minor" : "1003"},
+                            {title:'廣播室' , 'body':'人員休息室' , vid:5 , unlocked:false , 'video_id': 'JXJgtAF-2QI' , "major" : "10001" , "minor" : "1004"},
+							{title:'報關室' , 'body':'' , vid:6 , unlocked:false , 'video_id': 'IjDaMvYsE4E' , "major" : "10001" , "minor" : "1005"},
+                            {title:'礙子' , 'body':'' , vid:7 , unlocked:false , 'video_id': 'khz1S5qEEus' , "major" : "10001" , "minor" : "1006"},
+                            {title:'編竹夾泥牆' , 'body':'' , vid:8 , unlocked:false , 'video_id': 'CpbCjoADc8U' , "major" : "10001" , "minor" : "1007"},
+							{title:'日式玻璃工坊' , 'body':'' , vid:9 , unlocked:false , 'video_id': 'iYr0taFGaag' , "major" : "10001" , "minor" : "1008"},
+							{title:'海關工作流程' , 'body':'機船進出、報關繳稅' , vid:10 , unlocked:false , 'video_id': '-j8lrgMWP2A' , "major" : "10001" , "minor" : "1009"},
 			];
 			
 			console.log("ERROR MESSAGE:"+err);
@@ -130,7 +124,15 @@ export default class extends React.Component {
                     </View>
             </View>
         );
-    }
+    }//end render
+	
+	
+	
+	componentWillUnmount(){
+		if(TIMER!=null){
+			clearTimeout(TIMER);
+		}
+	}//end componentWillUnmount
 	
 }//end class
 
