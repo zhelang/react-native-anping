@@ -9,8 +9,8 @@ import CountAR_Image from '../drawable/count_ar.png';
 
 //取得裝置螢幕大小
 var {
-  height: deviceWidth,
-  width: deviceHeight
+  height: deviceHeight,
+  width: deviceWidth
 } = Dimensions.get("window");
 
 var TIMER;

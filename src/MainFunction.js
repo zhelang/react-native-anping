@@ -25,6 +25,8 @@ import RNFS from 'react-native-fs';
 const { ScreenBrightness } = NativeModules;
 //Router API
 import {Actions} from 'react-native-router-flux';
+//Toast APi
+import Toast from "@remobile/react-native-toast";
 
 
 
@@ -43,14 +45,15 @@ var {
 const CONFIG={
 	nearRangRSSI : -100,//iBeacons可排序的距離(dbm)
 	bluetoothScanFrequency : 1,//iBeacons掃描週期(s)
-	acceleratorDetectionFrequency : 3000,//加速器偵測頻率(ms)
-	ANGLE_ACC : 4.5,//水平角度誤差(越大越遲鈍)
-	disconnectValue : 5,//斷線誤差(s)
+	acceleratorDetectionFrequency : 2000,//加速器偵測頻率(ms)
+	ANGLE_ACC : 6.5,//水平角度誤差(越大越遲鈍)
+	disconnectValue : 3,//斷線誤差(s)
 	FPS : 1000,//程式迴圈間隔(ms)
-	LITI_RESET_COUNT : 3,//偵測次數重設間隔(s)，建議至少大於iBeacons發送訊號時間的兩倍(Interval: 2588ms)
+	LITI_RESET_COUNT : 7,//偵測次數重設間隔(s)，建議至少大於iBeacons發送訊號時間的兩倍(Interval: 2588ms)
 	LITI_VIBRATE : 2,//震動間隔(s)
 	myYoutubeAPIKey : 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY',//Youtube API Key
 	VIDEO_LIST_FILE : RNFS.DocumentDirectoryPath + '/vid_list.txt',//影片儲存檔案位置
+	OPENSCAN_TIME : 1500,//恢復掃描間隔
 };
 
 
@@ -74,7 +77,7 @@ var IBEACON_LENG;
 
 
 //Listener
-var TIMER;
+var TIMER, TIME_OPENSCAN;
 var BeaconsDidRange_Listener;
 var Accelerometer_Listener;
 
@@ -138,6 +141,7 @@ export default class MainFunction extends Component {
 		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
 		this.backButtonFunction = this.backButtonFunction.bind(this);
 		this.exitScan = this.exitScan.bind(this);
+		this.openScan = this.openScan.bind(this);
 		
 	}//end constructor
 	
@@ -150,9 +154,7 @@ export default class MainFunction extends Component {
 
 	}
 
-	
-	
-	
+		
 	
 	//Use this as an opportunity to operate on the DOM when the component has been updated. 
 	componentDidMount() {
@@ -196,7 +198,7 @@ export default class MainFunction extends Component {
 					this.setState({flagFirstGuid: true});
 					//設定Uri
 					this.setState({closeMinor: IBINFO[0][MINOR], VideoId:IBINFO[0][VIDEOID]});
-					console.warn("First Guid = " + IBINFO[0][VIDEOID]);
+					console.log("First Guid = " + IBINFO[0][VIDEOID]);
 					//附近有可以辨識的IBeacons
 					this.setState({haveIB: true, playEndedFlag: false});
 				}//end if
@@ -289,22 +291,21 @@ export default class MainFunction extends Component {
 	
 	//更新加速器狀態
 	onAccelerometerUpdate(data){
-		
-		//連接Sate
-		var levelFlag = this.state.levelFlag;
-		
-		if( ((data.x>=-CONFIG.ANGLE_ACC) && (data.y>=-CONFIG.ANGLE_ACC)&&(data.y<=CONFIG.ANGLE_ACC)) && (data.z>=CONFIG.ANGLE_ACC) ){
-			//手機水平時
-			levelFlag = true;
-		}else{
-			//手機不確定的狀態時
-			levelFlag = false;
+		//掃描到IB則判斷水平
+		if(this.state.haveIB){
+			//連接Sate
+			var _levelFlag = false;
+			this.setState({levelFlag: _levelFlag});
+			if( ((data.x>=-CONFIG.ANGLE_ACC) && (data.y>=-CONFIG.ANGLE_ACC)&&(data.y<=CONFIG.ANGLE_ACC)) && (data.z>=CONFIG.ANGLE_ACC) ){
+				//手機水平時
+				_levelFlag = true;
+				//存回State
+				this.setState({levelFlag: _levelFlag});
+			}else{
+				//手機不確定的狀態時
+				/*_levelFlag = false;*/
+			}//end if
 		}//end if
-
-		//存回State
-		this.setState({
-			levelFlag: levelFlag
-		});
 		
 		//console.warn('acc.x='+data.x+', acc.y='+data.y+', acc.z='+data.z+', levelFlag='+levelFlag);
 		
@@ -333,7 +334,8 @@ export default class MainFunction extends Component {
 		//Step_4:judgment Disconnect
 		this.judgeDisconnect();
 		
-		//console.warn('paused='+this.state.paused+', haveIB='+this.state.haveIB+', firstGuid='+this.state.flagFirstGuid+', flagiBeaconConnect='+this.state.flagiBeaconConnect+', levelFlag='+this.state.levelFlag);
+		//Toast.showShortBottom('paused='+this.state.paused+', haveIB='+this.state.haveIB+', firstGuid='+this.state.flagFirstGuid+', flagiBeaconConnect='+this.state.flagiBeaconConnect+', levelFlag='+this.state.levelFlag+", VideoID="+this.state.VideoId);
+		//console.log('paused='+this.state.paused+', haveIB='+this.state.haveIB+', firstGuid='+this.state.flagFirstGuid+', flagiBeaconConnect='+this.state.flagiBeaconConnect+', levelFlag='+this.state.levelFlag+"VideoID="+this.state.VideoId);
 		
 	}//end mainFlowControl
   
@@ -413,16 +415,11 @@ export default class MainFunction extends Component {
 						
 						if((new_closeMajor == IBINFO[i][MAJOR]) && (new_closeMinor == IBINFO[i][MINOR])){
 							
-							//設定Uri
-							this.setState({VideoId:IBINFO[i][VIDEOID]});
-							
-							//附近有可以辨識的IBeacons
-							this.setState({haveIB: true, playEndedFlag: false});
+							//設定Uri,附近有可以辨識的IBeacons
+							this.setState({VideoId:IBINFO[i][VIDEOID], paused: false,haveIB: true, playEndedFlag: false});
 	
 							//有影片可以撥放時可以觀看，提醒使用者
-							for(let j=0;j<CONFIG.LITI_VIBRATE;j++){
-								Vibration.vibrate();
-							}
+							for(let j=0;j<CONFIG.LITI_VIBRATE;j++){ Vibration.vibrate(); }
 							
 							//播放音效
 							this.playSound();
@@ -470,26 +467,18 @@ export default class MainFunction extends Component {
 		const levelFlag = this.state.levelFlag;
 		const VideoId = this.state.VideoId;
 		const flagFirstGuid = this.state.flagFirstGuid;
-		var _paused = this.state.paused;
+		var _paused;
 			
-		if(( flagiBeaconConnect && levelFlag && !(VideoId===null))){
-			//console.warn("開始播放(_paused="+_paused+', this.state.paused='+this.state.paused+')');
-			_paused = false;
 			
-		}else if( flagiBeaconConnect && !levelFlag && !(VideoId===null)){
-			//console.warn("暫停播放");
-			_paused = true;
-		
-		}else if( !flagiBeaconConnect ){
-			_paused = true;
-				
+		if( !(VideoId===null) && flagiBeaconConnect && levelFlag ){
+			_paused=false;
+		}else{
+			_paused=true;
 		}//end if
 		
-		//console.warn('Old : this.state.paused='+this.state.paused);
-		this.setState({paused: _paused});
-		//console.warn('New : this.state.paused='+this.state.paused);
-			
-		//console.warn("判斷是否播放");
+		if(this.state.paused != _paused){
+			this.setState({paused: _paused});
+		}//end if
 		
 	}//end judgePlayVideo
 	
@@ -616,6 +605,15 @@ export default class MainFunction extends Component {
 	
 	
 	
+	openScan(){
+		//撥放結束後重新開啟掃描功能
+		this.setState({haveIB: false});
+		//清除Timer
+		if(TIME_OPENSCAN!=null){clearTimeout(TIME_OPENSCAN);}
+	}//end openScan
+	
+	
+	
 	
 	
 	//返回鍵
@@ -681,9 +679,11 @@ export default class MainFunction extends Component {
 						//播放完畢時，暫停撥放
 						if(event.state == 'ended'){
 							//讓目前IBeacon斷線
-							this.setState({paused: true, haveIB: false, playEndedFlag: true, flagFirstGuid: false});
+							this.setState({paused: true, levelFlag: false, playEndedFlag: true, flagFirstGuid: false});
 							//紀錄已撥放的影片數量
 							this.RecodViewedNumber();
+							//回復掃描功能
+							TIME_OPENSCAN = setTimeout(() => {this.openScan()}, CONFIG.OPENSCAN_TIME);
 						}//end if
 					}}
 				/>
@@ -712,8 +712,8 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	video_play:{
-		width: deviceHeight*0.95,
-		height: deviceWidth*0.95,
+		width: deviceWidth*0.95,
+		height: deviceHeight*0.95,
 	},
 	video_paused:{
 		//留白，播放不順利可維持畫面

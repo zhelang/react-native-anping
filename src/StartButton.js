@@ -15,8 +15,8 @@ import VideoListBtnImage from '../drawable/list.png';
 
 //取得裝置螢幕大小
 var {
-  height: deviceWidth,
-  width: deviceHeight
+  height: deviceHeight,
+  width: deviceWidth
 } = Dimensions.get("window");
 
 
@@ -113,12 +113,12 @@ export default class extends React.Component {
 	
 	
 	componentWillUnmount(){
-		//關閉藍芽
+		/*關閉藍芽
 		BluetoothSerial.disable()
 		.then((res) => 
 			console.log("藍芽關閉成功"))
 		.catch((err) => 
-			console.log("藍芽關閉失敗 ${err}"));
+			console.log("藍芽關閉失敗 ${err}"));*/
 	}//end componentWillUnMount()
 	
 }//end class
