@@ -5,8 +5,8 @@ import RNFS from 'react-native-fs';
 import YouTube from 'react-native-youtube';
 
 var {
-  height: deviceWidth,
-  width: deviceHeight,
+  height: deviceHeight,
+  width: deviceWidth
 } = Dimensions.get("window");
 
 //引用圖片
@@ -27,15 +27,15 @@ const myYoutubeAPIKey = 'AIzaSyARyHtNd7_R3r4ZCaEow8DkbHX4K3TTpwY';
 export default class extends React.Component {
   constructor(props) {
       super(props);
+	  
       const ds = new ListView.DataSource({rowHasChanged:(r1, r2) => r1 !== r2});
+	  
       this.state = {
         dataSource:ds.cloneWithRows([]),
         comingSoonTop:deviceHeight,
         showing:false,
 		flagNetwork:false,
-		
-		//影片播放器參數
-		paused: false,
+		play: false,//影片播放器參數
 		video_id: '',
       };
 
@@ -52,21 +52,43 @@ export default class extends React.Component {
 	
 	}
   
+  
+  
 	componentDidMount(){
+		
 		//抓取資料
 		this.fetchData();
+		
 		//檢查是否有網路
 		NetInfo.isConnected.fetch().then(isConnected => {
 			this.setState({flagNetwork: isConnected});
 			//console.warn("flagNetwork="+isConnected);
 		});
+		
+		//backbutton listener(android)
+		BackAndroid.addEventListener('hardwareBackPress', () => {
+			
+			//if youtube player is playying, stop it
+			 if (this.state.play) {
+			   this.setState({play: false});
+			   return true;
+			 }
+			return false;
+		});
 	}//end componentDidMount
+	
+	
+	
+	componentWillUnmount(){
+		//remove backbutton listener
+		BackAndroid.removeEventListener('hardwareBackPress', () => {});
+	}//end componentWillUnmount
 
   
   
   
-  //抓取資料
-  fetchData(){
+	//抓取資料
+	fetchData(){
 	  
 		//抓取記事本內容(JSON格式)
         RNFS.readFile(VIDEO_LIST_FILE).then((content)=>{    
@@ -82,7 +104,7 @@ export default class extends React.Component {
 			
         }).done();
 		
-  }//end fetch Data
+	}//end fetch Data
   
   
 	//返回鍵
@@ -100,61 +122,56 @@ export default class extends React.Component {
 			Actions.pop({popNum:2});
 			BackAndroid.exitApp();
 			//Actions.welcome({refresh: {}});
-			
 		})
 		.catch((err)=>{
 			console.log("清除失敗："+err.message)
 		})
-		
-		//console.log('清除資料了');
 	}//end deleteVideoData
 
   
   
   
 	//顯示使用
-  _renderRow(rowData, sectionID, rowID, highlightRow) {
+	_renderRow(rowData, sectionID, rowID, highlightRow) {
 
-    //console.warn('rowData' , rowData);
-    var maxLen = 105;
+		//console.warn('rowData' , rowData);
+		let maxLen = 105;
 
-	//大於顯示值，則????
-    if(rowData.body.length > maxLen){
-      rowData.body = rowData.body.slice(0,maxLen) + '...';
-    }
-	
-    return(
-
-          <View style={styles.cellContainer}>
-            <View style={styles.cell}>
-			
-              <View style={styles.cellsTitleContainer}>
-                <Text style={styles.cellsTitle}>{rowData.title}</Text>
-              </View>
-			  
-              <TouchableOpacity onPress={()=>{ if(rowData.unlocked&&this.state.flagNetwork){this.setState({paused: true, video_id: rowData.video_id})} }}>
-			  
-                <View style={ styles.thumbnailContainer }>
-					<Image style={ rowData.unlocked ? styles.thumbnail : styles.thumbnail_lock } source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
-					<Image style={ styles.lock }source={ (!rowData.unlocked&&this.state.flagNetwork) ? IC_LOCK : IC_PLAY }/>
-					<Text style={ !this.state.flagNetwork ? styles.opennetwork_show : styles.opennetwork_hide }>請開啟網路{'\n'}Please open network.</Text>
-                </View>
+		//大於顯示值，則????
+		if(rowData.body.length > maxLen){
+		  rowData.body = rowData.body.slice(0,maxLen) + '...';
+		}
+		
+		return(
+			  <View style={styles.cellContainer}>
+				<View style={styles.cell}>
 				
-              </TouchableOpacity>
-			  
-              <View style={styles.cellsBodyContainer}>
-                <Text style={styles.cellsBody}>{rowData.body}</Text>
-              </View>
-			  
-            </View>
-          </View>
-
-      );
+				  <View style={styles.cellsTitleContainer}>
+					<Text style={styles.cellsTitle}>{rowData.title}</Text>
+				  </View>
+				  
+				  <TouchableOpacity onPress={()=>{ if(rowData.unlocked&&this.state.flagNetwork){this.setState({play: true, video_id: rowData.video_id})} }}>
+				  
+					<View style={ styles.thumbnailContainer }>
+						<Image style={ rowData.unlocked ? styles.thumbnail : styles.thumbnail_lock } source={{uri:'https://img.youtube.com/vi/'+rowData.video_id+'/sddefault.jpg'}}/>
+						<Image style={ styles.lock }source={ (!rowData.unlocked&&this.state.flagNetwork) ? IC_LOCK : IC_PLAY }/>
+						<Text style={ !this.state.flagNetwork ? styles.opennetwork_show : styles.opennetwork_hide }>請開啟網路{'\n'}Please open network.</Text>
+					</View>
+					
+				  </TouchableOpacity>
+				  
+				  <View style={styles.cellsBodyContainer}>
+					<Text style={styles.cellsBody}>{rowData.body}</Text>
+				  </View>
+				  
+				</View>
+			  </View>
+		);
   }//end _renderRow
 
   render(){
     return(
-		<View style={ !this.state.paused ? {flex:1, backgroundColor:'#ffffff'} : styles.video_paused } >
+		<View style={ !this.state.play ? {flex:1, backgroundColor:'#ffffff'} : styles.video_paused } >
 		
 			<Image source={BackGround_Image} style={{position: "absolute", left:0, bottom:0, width: deviceWidth, height: deviceWidth/4, resizeMode: Image.resizeMode.contain,  borderWidth:1,}}/>
 		
@@ -180,23 +197,21 @@ export default class extends React.Component {
 		
 			<YouTube
 				videoId={ this.state.video_id }
-				play={ this.state.paused }
+				play={ this.state.play }
 				hidden={ true }
 				playsInline={ true }
 				controls={ 1 }
 				loop={ false }
 				apiKey={ myYoutubeAPIKey }
-				style={ this.state.paused ? styles.video_play : styles.video_paused }
+				style={ this.state.play ? styles.video_play : styles.video_paused }
 				onChangeState={ (event) => { 
 					//播放完畢時，暫停撥放
 					if(event.state == 'ended'){
-						this.setState({paused: false, video_id: ''});
+						this.setState({play: false, video_id: ''});
 					}	
 				}}
 			/>
-				
 		</View>
-
     );
   }//end render
   

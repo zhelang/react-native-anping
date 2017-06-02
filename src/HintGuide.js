@@ -4,15 +4,9 @@ import {View, Text, StyleSheet, Animated, Dimensions, TouchableWithoutFeedback ,
 //Router API
 import {Actions} from "react-native-router-flux";
 
-//取得圖片位置
-import CountAR_Image from '../drawable/count_ar.png';
 
-//取得裝置螢幕大小
-var {
-  height: deviceHeight,
-  width: deviceWidth
-} = Dimensions.get("window");
-
+import CountAR_Image from '../drawable/count_ar.png';//取得圖片位置
+var {height: deviceHeight,width: deviceWidth} = Dimensions.get("window");//取得裝置螢幕大小
 var TIMER;
 const TIMER_INERVAL = 1000;//倒數器間隔=100ms
 const TIMER_TIME = 8;
@@ -40,15 +34,13 @@ export default class extends React.Component {
     componentDidMount() {
 		
 		//跳轉初次導覽畫面
-		TIMER = setInterval(() => {
-			this.jumpMainFunctionPage()  //origin Actions.home()
-		}, TIMER_INERVAL);
+		TIMER = setInterval(() => {this.jumpMainFunctionPage()}, TIMER_INERVAL);
 	
     }//end componentDidMount
 	
 	
 
-    closeModal() {
+    /*closeModal() {
 		
 		//跳轉MainFunctionPage特效
         Animated.timing(this.state.offset, {
@@ -56,7 +48,7 @@ export default class extends React.Component {
             toValue: deviceHeight
         }).start(Actions.mainfunction_page());
 		
-    }//end 
+    }//end */
 	
 	
 	
@@ -65,14 +57,12 @@ export default class extends React.Component {
 		
 		if(this.state.flagGoScanPage){
 			//開始倒數
-			TIMER = setInterval(() => {
-				this.jumpMainFunctionPage()  
-			}, TIMER_INERVAL);
+			TIMER = setInterval(() => {this.jumpMainFunctionPage() }, TIMER_INERVAL);
 		}else{
 			//暫停倒數
 			clearInterval(TIMER);
+			TIMER = null;
 		}//end if
-		
 	}//end goScanPage
 	
 	
@@ -82,8 +72,6 @@ export default class extends React.Component {
 		
 		currentTime = this.state.timer - TIMER_INERVAL/1000;
 		if(currentTime<=0){
-			//clear timer
-			clearInterval(TIMER);
 			this.state = {
 				timer: TIMER_TIME, //倒數計時
 				flagGoScanPage: true
@@ -92,9 +80,7 @@ export default class extends React.Component {
 			Actions.pop();
 			Actions.mainfunction_page();
 		}else{
-			this.setState({
-				timer: currentTime,
-			});
+			this.setState({timer: currentTime});
 		}//end if
 		
 	}//end jumpMainFunctionPage()
@@ -105,15 +91,13 @@ export default class extends React.Component {
     render(){
         return (
             <View style={styles.container}>
-				
-					<Image source={CountAR_Image} style={styles.CountAR}/>
+				<Image source={CountAR_Image} style={styles.CountAR}/>
 					
-					<Text style={styles.context}>
-						請將手機放置於「AR眼鏡」中{'\n'}倒數
-						<Text style={{fontSize: 30, color: "#E2754B"}}> {this.state.timer} </Text>
-						秒
-					</Text>	
-
+				<Text style={styles.context}>
+					請將手機放置於「AR眼鏡」中{'\n'}倒數
+					<Text style={{fontSize: 30, color: "#E2754B"}}> {this.state.timer} </Text>
+					秒
+				</Text>	
            </View>
         );
     }//end render
@@ -121,8 +105,10 @@ export default class extends React.Component {
 	
 	
 	componentWillUnmount(){
+		//clear timer
 		if(TIMER!=null){
 			clearInterval(TIMER);
+			TIMER = null;
 		}
 	}//end componentWillUnmount
 	

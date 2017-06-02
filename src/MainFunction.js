@@ -11,24 +11,14 @@
 */
 import React, {Component}  from 'react';
 import {StyleSheet,Text,View,DeviceEventEmitter,Vibration,BackAndroid,TouchableOpacity,Image,Dimensions,AsyncStorage,NativeModules,NetInfo} from 'react-native';
-//ibeacons API引用
-import Beacons from 'react-native-beacons-android';
-//SensorManager API
-var mSensorManager = require('NativeModules').SensorManager;
-//Youtube API
-import YouTube from 'react-native-youtube';
-//Sound API
-import Sound from 'react-native-sound';
-//Storage API
-import RNFS from 'react-native-fs';
-//ScreenBrightness API
-const { ScreenBrightness } = NativeModules;
-//Router API
-import {Actions} from 'react-native-router-flux';
-//Toast APi
-import Toast from "@remobile/react-native-toast";
-
-
+import Beacons from 'react-native-beacons-android';//ibeacons API引用
+var mSensorManager = require('NativeModules').SensorManager;//SensorManager API
+import YouTube from 'react-native-youtube';//Youtube API
+import Sound from 'react-native-sound';//Sound API//Sound API
+import RNFS from 'react-native-fs';//Storage API
+const { ScreenBrightness } = NativeModules;//ScreenBrightness API
+import {Actions} from 'react-native-router-flux';//Router API
+import Toast from "@remobile/react-native-toast";//Toast APi
 
 
 
@@ -59,20 +49,18 @@ const CONFIG={
 
 
 //雷達圖片
-import Radar from '../drawable/radar.gif';
+import img_Radar from '../drawable/radar.gif';
 //音效位置
-const requireAudio = 'hit_sound.mp3';
+const sound_Hit = 'hit_sound.mp3';
 
 
 
-//VIdeo JSON
-var VIDEO_JSON;
-//Ibeacons的基本資訊 Array
-//Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=是否被看過, Index_4=偵測次數
-const MAJOR = 0,MINOR = 1, VIDEOID = 2, VIEWED = 3 ,DECTCOUNT = 4;
-var IBINFO = [];
-//紀錄陣列大小
-var IBEACON_LENG;
+
+var BUFFER_IBEACONS_ARRAY = [];//Receive iBeacons buffer array
+var VIDEO_JSON;//VIdeo JSON
+var IBINFO = [];//Ibeacons的基本資訊 Array
+const MAJOR = 0,MINOR = 1, VIDEOID = 2, VIEWED = 3 ,DECTCOUNT = 4;//Index_0=Major, Index_1=minor, Index_2=VideoUri, Index_3=是否被看過, Index_4=偵測次數
+var IBEACON_LENG;//紀錄陣列大小
 
 
 
@@ -87,44 +75,19 @@ export default class MainFunction extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			
-		  //原始螢幕亮度
-		  initScreenBrithness: 0.5,
-			
-		  //IBeacon 資料存放陣列
-		  beacons:[],
-		  
-		  //最近的IBeaon資訊
-		  closeMajor:null,
+		  scanFlag: true,//掃描功能(Default true)
+		  initScreenBrithness: 0.5, //原始螢幕亮度  
+		  closeMajor:null,//最近的IBeaon資訊
 		  closeMinor:null,
-		  //closeRssi:nearRangRSSI,
-		  
-		  //是否手機水平
-		  levelFlag:false,
-		  
-		  //確定附近有IBeacons訊號
-		  haveIB:false,
-		  
-		  //是否有iBeacons連線中
-		  flagiBeaconConnect:false,
-		  
-		  //斷線誤差計數器，一開始要為0
-		  counterDisconnect:0,
-		  
-		  //重設偵測次數計數器
-		  resetDectCountCount:0,
-
-		  //紀錄已撥放的影片數量
-		  VideoISViewed: 0,
-		  
-		  //第一次播放影片flag
-		  flagFirstGuid: false,
-		  
-		  //是否有開啟網路
-		  flagNetwork: true,
-		  
-		  //影片播放器參數
-		  paused: true,
+		  levelFlag:false,//是否手機水平
+		  haveIB:false,//確定附近有IBeacons訊號
+		  flagiBeaconConnect:false,//是否有iBeacons連線中
+		  counterDisconnect:0,//斷線誤差計數器，一開始要為0
+		  resetDectCountCount:0,//重設偵測次數計數器
+		  VideoISViewed: 0,//紀錄已撥放的影片數量
+		  flagFirstGuid: false,//第一次播放影片flag
+		  flagNetwork: false,//是否有開啟網路(Default false)
+		  paused: true,//影片播放器參數
 		  VideoId: '',
 		  playEndedFlag: false,
 		};
@@ -136,13 +99,19 @@ export default class MainFunction extends Component {
 		this.judgePlayVideo = this.judgePlayVideo.bind(this);
 		this.judgeDisconnect = this.judgeDisconnect.bind(this);
 		this.mainFlowControl = this.mainFlowControl.bind(this);
-		this.MaxCountIBeacons = this.MaxCountIBeacons.bind(this);
-		this.ResetBeaconCount = this.ResetBeaconCount.bind(this);
-		this.RecodViewedNumber = this.RecodViewedNumber.bind(this);
+		this.maxCountIBeacons = this.maxCountIBeacons.bind(this);
+		this.resetBeaconCount = this.resetBeaconCount.bind(this);
+		this.recordViewedNumber = this.recordViewedNumber.bind(this);
+		this.playSound = this.playSound.bind(this);
 		this.backButtonFunction = this.backButtonFunction.bind(this);
+		this.scanButtonFunction = this.scanButtonFunction.bind(this);
 		this.exitScan = this.exitScan.bind(this);
 		this.openScan = this.openScan.bind(this);
-		
+		this.judgeFirstGuid = this.judgeFirstGuid.bind(this);
+		this.getViewVideoInfo = this.getViewVideoInfo.bind(this);
+		this.setMAXScreenBrightness = this.setMAXScreenBrightness.bind(this); 
+		this.checkNetwork = this.checkNetwork.bind(this);
+
 	}//end constructor
 	
 	
@@ -151,137 +120,48 @@ export default class MainFunction extends Component {
 	
 	//Use this as an opportunity to perform preparation before an update occurs. 
 	componentWillMount() {
-
+		
 	}
 
 		
 	
 	//Use this as an opportunity to operate on the DOM when the component has been updated. 
 	componentDidMount() {
-		//檢查是否有網路
-		NetInfo.isConnected.fetch().then(isConnected => {
-			this.setState({flagNetwork: isConnected});
-			//console.warn("isConnected = " + isConnected);
-			
-		});
 		
-		//抓取已閱覽紀錄
-		this.GetViewVideoInfo=()=>{
-			//抓取記事本內容(JSON格式)
-			RNFS.readFile(CONFIG.VIDEO_LIST_FILE).then((content)=>{    
-			
-				//with vid_list
-				VIDEO_JSON = JSON.parse(content);
-				
-				//將JSON資料放置IBINFO Array
-				var temp_array_vid_info=[];
-				var isViewedNumber=0;
-				for(var i=0 ; i<VIDEO_JSON.length ; i++){
-					temp_array_vid_info.push(VIDEO_JSON[i].major);
-					temp_array_vid_info.push(VIDEO_JSON[i].minor);
-					temp_array_vid_info.push(VIDEO_JSON[i].video_id);
-					temp_array_vid_info.push(VIDEO_JSON[i].unlocked);
-					temp_array_vid_info.push(0);//Index_4=偵測次數
-					if(VIDEO_JSON[i].unlocked){ isViewedNumber++;	} //紀錄已看過數量
-					IBINFO.push(temp_array_vid_info);
-					//console.warn("temp_array_vid_info:"+temp_array_vid_info);
-					temp_array_vid_info=[];
-				}
-				IBEACON_LENG = VIDEO_JSON.length; //總共IBeacons數量
-				this.setState({
-					VideoISViewed: isViewedNumber,
-				});
-				
-				//目前沒有在第一次導覽&沒有看過影片&有網路，則播放第一次導覽教學影片
-				if(!this.state.flagFirstGuid && isViewedNumber==0 && this.state.flagNetwork){
-					//目前正在第一次導覽
-					this.setState({flagFirstGuid: true});
-					//設定Uri
-					this.setState({closeMinor: IBINFO[0][MINOR], VideoId:IBINFO[0][VIDEOID]});
-					console.log("First Guid = " + IBINFO[0][VIDEOID]);
-					//附近有可以辨識的IBeacons
-					this.setState({haveIB: true, playEndedFlag: false});
-				}//end if
-				
-				//console.warn("FETCH SUCCES");									  
-			}).catch((err)=>{
-				console.warn("FETCH ERROR:"+err);
-				
-			}).done();
-			
-		};
-		this.GetViewVideoInfo();
-		
-		//音效設定
-		this.playSound=()=>{
-			const HitSound = new Sound(requireAudio,Sound.MAIN_BUNDLE,(error)=>{
-				if(error){
-					console.log('error: ',error);
-				}else{
-					HitSound.setSpeed(1);
-					HitSound.play(()=>HitSound.release());
-				}
-			});
-		};
-		
-		//亮度設定
-		this.SetMAXScreenBrightness=()=>{
-			
-			//保存目前亮度
-			ScreenBrightness.getBrightness()
-			.then(brightness=>{
-				//brightness range = 0~255,but api Only accepted 0~1
-				this.setState({initScreenBrithness: brightness/255});
-			}).catch(err=>{
-				console.log('ScreenBrightness.getBrightness FAIL:'+err.message);
-			});
-			
-			//調整最大亮度
-			ScreenBrightness.setBrightness(1);
-			
-		};
-		this.SetMAXScreenBrightness();
-		
-		//開始加速器偵測(ms)
-		mSensorManager.startAccelerometer(CONFIG.acceleratorDetectionFrequency);
-			
+		this.checkNetwork();//檢查是否有網路
+		this.getViewVideoInfo();//抓取已閱覽紀錄
+		this.setMAXScreenBrightness();//最大亮度設定
+
 		//加速器偵測事件
 		Accelerometer_Listener = DeviceEventEmitter.addListener('Accelerometer', (data) => {
 			this.onAccelerometerUpdate(data);
 		});
-			
-		//開始偵測iBeacon
-		Beacons.detectIBeacons();
-			
-		//iBeacons的掃描的間隔時間(s)
-		Beacons.setBackgroundBetweenScanPeriod( CONFIG.bluetoothScanFrequency );
-			
+		mSensorManager.startAccelerometer(CONFIG.acceleratorDetectionFrequency);//開始加速器偵測(ms)
+		
+		Beacons.setBackgroundBetweenScanPeriod( CONFIG.bluetoothScanFrequency );//iBeacons的掃描的間隔時間(s)
+		Beacons.detectIBeacons();//開始偵測iBeacon
 		//開啟iBecons Ranging(測距)
-		Beacons.startRangingBeaconsInRegion('REGION1')
-		.then(() => 
+		Beacons.startRangingBeaconsInRegion('REGION1').then(() => 
 			console.log('Beacons ranging started succesfully')
 		)
 		.catch(error => 
-			console.log(`Beacons ranging not started, error: ${error}`)
+			console.log('Beacons ranging not started, error: ${error}')
 		);
-			
 		//iBecons Ranging的事件
-		BeaconsDidRange_Listener = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {
-			//console.warn("偵測到IBeacons");
-						
+		BeaconsDidRange_Listener = DeviceEventEmitter.addListener('beaconsDidRange',(data) => {			
 			//儲存資料(data.beacons是陣列內容)
-			this.setState({beacons: data.beacons});
-						
+			BUFFER_IBEACONS_ARRAY = data.beacons;			
 		});
 		
-		//FPS(ms)觸發一次，mainFlowControl()
-		if(this.state.flagNetwork){
-			TIMER = setInterval(() => { 
-				//進入流程控制
-				this.mainFlowControl(); 
-			}, CONFIG.FPS);
-		}//end if
-		
+		//backbutton listener(android)
+		BackAndroid.addEventListener('hardwareBackPress', () => {
+			//if youtube player is playying, stop it
+			 if (!this.state.paused) {
+			   this.setState({paused: true, haveIB: false, levelFlag: false, playEndedFlag: true, flagFirstGuid: false, flagiBeaconConnect: false});
+			   return true;
+			 }
+			return false;
+		});
 	}//end componentDidMount()
 
 	
@@ -291,22 +171,18 @@ export default class MainFunction extends Component {
 	
 	//更新加速器狀態
 	onAccelerometerUpdate(data){
+		
 		//掃描到IB則判斷水平
 		if(this.state.haveIB){
 			//連接Sate
-			var _levelFlag = false;
-			this.setState({levelFlag: _levelFlag});
+			let _levelFlag = false;
+			//手機水平時
 			if( ((data.x>=-CONFIG.ANGLE_ACC) && (data.y>=-CONFIG.ANGLE_ACC)&&(data.y<=CONFIG.ANGLE_ACC)) && (data.z>=CONFIG.ANGLE_ACC) ){
-				//手機水平時
 				_levelFlag = true;
-				//存回State
-				this.setState({levelFlag: _levelFlag});
-			}else{
-				//手機不確定的狀態時
-				/*_levelFlag = false;*/
 			}//end if
+			//存回State
+			if(this.state.levelFlag!=_levelFlag){this.setState({levelFlag: _levelFlag});}
 		}//end if
-		
 		//console.warn('acc.x='+data.x+', acc.y='+data.y+', acc.z='+data.z+', levelFlag='+levelFlag);
 		
 	}//end onAccelerometerUpdate
@@ -347,29 +223,25 @@ export default class MainFunction extends Component {
 	countDectIBeacons(){
 		
 		//先連結State
-		var beacons = this.state.beacons;
-		var closeMajor = this.state.closeMajor;
-		var closeMinor = this.state.closeMinor;
-		//var nearRangRSSI = this.state.nearRangRSSI;
+		let beacons = BUFFER_IBEACONS_ARRAY;
+		let closeMajor = this.state.closeMajor;
+		let closeMinor = this.state.closeMinor;
 		
 		//讀取抓取的ibeaconData
 		BeaLength = beacons.length;//降低存取次數
-		for (var i = 0; i < BeaLength ; i++)
+		for (let i = 0; i < BeaLength ; i++)
 		{
 			//要到一定距離才計算偵測次數
 			if(beacons[i].rssi >= CONFIG.nearRangRSSI){
 				//偵測次數++
-				for(var k=0;k<IBEACON_LENG;k++){
+				for(let k=0;k<IBEACON_LENG;k++){
 					if((beacons[i].major == IBINFO[k][MAJOR]) && (beacons[i].minor == IBINFO[k][MINOR])){
 						IBINFO[k][DECTCOUNT]++;
 						//console.warn(beacons[i].major + "'s Count = " + IBINFO[k][3]);
 					}//end if
-				}//end for		
-			}else{
-				//console.warn(beacons[i].major + "'s RSSI = " + beacons[i].rssi);
+				}//end for k	
 			}//end if
-		}//end for
-		//console.warn("計數iBecons偵測次數");
+		}//end for i
 	}//end coutDectIBeacons()
 	
 	
@@ -379,9 +251,10 @@ export default class MainFunction extends Component {
 	pickVideoId(){
 		
 		//連結state
-		var resetDectCountCount = this.state.resetDectCountCount;
-		var old_closeMajor = this.state.closeMajor;
-		var old_closeMinor = this.state.closeMinor;
+		let resetDectCountCount = this.state.resetDectCountCount;
+		let old_closeMajor = this.state.closeMajor;
+		let old_closeMinor = this.state.closeMinor;
+		let _haveIB = false;//回復狀態，避免有不可辨識的IBeacons
 		
 		resetDectCountCount++;
 		
@@ -390,14 +263,11 @@ export default class MainFunction extends Component {
 			
 			//console.warn("次數到了");
 			
-			//回復狀態，避免有不可辨識的IBeacons
-			this.setState({haveIB: false});
-			
 			//選出最大的Count IBeacon
-			this.MaxCountIBeacons();
+			this.maxCountIBeacons();
 			
-			var new_closeMajor = this.state.closeMajor;
-			var new_closeMinor = this.state.closeMinor;
+			let new_closeMajor = this.state.closeMajor;
+			let new_closeMinor = this.state.closeMinor;
 			
 			//如果有抓到較近的iBeacon 且 目前無撥放的影片
 			if(new_closeMajor != null && new_closeMinor != null){
@@ -409,14 +279,15 @@ export default class MainFunction extends Component {
 					//console.warn("closeMajor:"+closeMajor+",closeMinor:"+closeMinor);
 				
 					//配對Major, Minor
-					for(var i=0; i < IBEACON_LENG ; i++){
+					for(let i=0; i < IBEACON_LENG ; i++){
 					
 						//console.warn("IBINFO["+i+"][0]:"+IBINFO[i][0]+",IBINFO["+i+"][1]:"+IBINFO[i][1]);
 						
 						if((new_closeMajor == IBINFO[i][MAJOR]) && (new_closeMinor == IBINFO[i][MINOR])){
 							
 							//設定Uri,附近有可以辨識的IBeacons
-							this.setState({VideoId:IBINFO[i][VIDEOID], paused: false,haveIB: true, playEndedFlag: false});
+							_haveIB = true;
+							this.setState({VideoId:IBINFO[i][VIDEOID], paused: false, playEndedFlag: false});
 	
 							//有影片可以撥放時可以觀看，提醒使用者
 							for(let j=0;j<CONFIG.LITI_VIBRATE;j++){ Vibration.vibrate(); }
@@ -435,24 +306,22 @@ export default class MainFunction extends Component {
 					if(!this.state.playEndedFlag){
 						
 						//附近有可以辨識的IBeacons
-						this.setState({haveIB: true});
+						_haveIB = true;
 						
 					}//end if
 					
 				}//end if
 			}//end if
 			
+			if(this.state.haveIB != _haveIB){this.setState({haveIB: _haveIB});}
+			
 			//重設偵測次數計數器
 			resetDectCountCount = 0;
-			this.ResetBeaconCount();
+			this.resetBeaconCount();
 		
 		}//end if
 		
-		this.setState({
-			resetDectCountCount: resetDectCountCount
-		});
-		
-		//console.warn("挑出VideoID");
+		this.setState({resetDectCountCount: resetDectCountCount});
 		
 	}//end pickVideoId
 	
@@ -467,8 +336,7 @@ export default class MainFunction extends Component {
 		const levelFlag = this.state.levelFlag;
 		const VideoId = this.state.VideoId;
 		const flagFirstGuid = this.state.flagFirstGuid;
-		var _paused;
-			
+		let _paused;
 			
 		if( !(VideoId===null) && flagiBeaconConnect && levelFlag ){
 			_paused=false;
@@ -488,9 +356,10 @@ export default class MainFunction extends Component {
 	
 	//Step_4 斷線判斷
 	judgeDisconnect(){
+		
 		//取得State
-		var counterDisconnect = this.state.counterDisconnect;
-		var flagiBeaconConnect = this.state.flagiBeaconConnect;
+		let counterDisconnect = this.state.counterDisconnect;
+		let flagiBeaconConnect = this.state.flagiBeaconConnect;
 		const haveIB = this.state.haveIB;
 		
 		//console.warn("haveIB="+haveIB);
@@ -518,10 +387,7 @@ export default class MainFunction extends Component {
 		this.setState({
 			counterDisconnect:counterDisconnect,
 			flagiBeaconConnect:flagiBeaconConnect
-			
 		});
-		
-		//console.warn("判斷是否斷線");
 		
 	}//end judgeDisconnect()
 
@@ -530,12 +396,12 @@ export default class MainFunction extends Component {
 	
 	
 	//挑出偵測次數最高的iBeacons
-	MaxCountIBeacons(){
-		var count=0;
-		var closeMajor=null;
-		var closeMinor=null;
+	maxCountIBeacons(){
+		let count=0;
+		let closeMajor=null;
+		let closeMinor=null;
 		
-		for(var i=0;i<IBEACON_LENG;i++){
+		for(let i=0;i<IBEACON_LENG;i++){
 			if((IBINFO[i][DECTCOUNT] != 0) && (IBINFO[i][DECTCOUNT] > count)){
 				count = IBINFO[i][DECTCOUNT];
 				closeMajor = IBINFO[i][MAJOR];
@@ -548,28 +414,28 @@ export default class MainFunction extends Component {
 				closeMinor:closeMinor
 		});
 		
-	}//end MaxCountIBeacons
+	}//end maxCountIBeacons
 
 	
 	
 	
 	
 	//Reset偵測次數
-	ResetBeaconCount(){
+	resetBeaconCount(){
 		
-		for(var i=0;i<IBEACON_LENG;i++){
+		for(let i=0;i<IBEACON_LENG;i++){
 			IBINFO[i][DECTCOUNT] = 0;
 		}//end for
 		//console.warn("IBeacon計數紀錄清除完成");
 		
-	}//end ResetBeaconCount
+	}//end resetBeaconCount
 
 
 
 
 
 	//紀錄已撥放的影片數量
-	RecodViewedNumber(){
+	recordViewedNumber(){
 		
 		//連結state
 		NowVideoID = this.state.VideoId;
@@ -595,7 +461,6 @@ export default class MainFunction extends Component {
 				.catch((err)=>
 					console.log(err.message)
 				);
-				
 			}else{
 				//console.warn("紀錄失敗 IBINFO["+i+"][VIEWED] = " + IBINFO[i][VIEWED]);
 			}
@@ -605,11 +470,111 @@ export default class MainFunction extends Component {
 	
 	
 	
+	checkNetwork(){
+		NetInfo.isConnected.fetch().then(isConnected => {
+			//save network flag
+			this.setState({flagNetwork: isConnected,scanFlag: isConnected});
+			//start main flow control
+			if(isConnected){TIMER = setInterval(() => { this.mainFlowControl(); }, CONFIG.FPS);}
+			//console.warn("isConnected = " + isConnected);
+		});
+	}//end checkNetwork
+	
+	
+	
+	setMAXScreenBrightness(){
+		
+		//保存目前亮度
+		ScreenBrightness.getBrightness().then( brightness =>{
+			//brightness range = 0~255,but api Only accepted 0~1
+			this.setState({initScreenBrithness: brightness/255});
+		}).catch(err=>{
+			console.log('ScreenBrightness.getBrightness FAIL:'+err.message);
+		});
+			
+		//調整最大亮度
+		ScreenBrightness.setBrightness(1);
+			
+	}//end setMAXScreenBrightness
+	
+	
+	
+	getViewVideoInfo(){
+		//抓取記事本內容(JSON格式)
+		RNFS.readFile(CONFIG.VIDEO_LIST_FILE).then((content)=>{    
+			
+			//with vid_list
+			VIDEO_JSON = JSON.parse(content);
+				
+			//將JSON資料放置IBINFO Array
+			let temp_array_vid_info=[];
+			let isViewedNumber=0;
+			for(let i=0 ; i<VIDEO_JSON.length ; i++){
+				temp_array_vid_info.push(VIDEO_JSON[i].major);
+				temp_array_vid_info.push(VIDEO_JSON[i].minor);
+				temp_array_vid_info.push(VIDEO_JSON[i].video_id);
+				temp_array_vid_info.push(VIDEO_JSON[i].unlocked);
+				temp_array_vid_info.push(0);//Index_4=偵測次數
+				if(VIDEO_JSON[i].unlocked){ isViewedNumber++;	} //紀錄已看過數量
+				IBINFO.push(temp_array_vid_info);
+				//console.warn("temp_array_vid_info:"+temp_array_vid_info);
+				temp_array_vid_info=[];
+			}
+			IBEACON_LENG = VIDEO_JSON.length; //總共IBeacons數量
+			this.setState({VideoISViewed: isViewedNumber,});
+			//console.log("FETCH SUCCES");
+			
+			//判斷是否第一次導覽
+			this.judgeFirstGuid();
+									  
+		}).catch((err)=>{
+			console.log("FETCH ERROR:"+err);
+				
+		}).done();
+			
+	}//end GetViewVideoInfo
+	
+	
+	
+	judgeFirstGuid(){
+		//目前沒有在第一次導覽&沒有看過影片&有網路，則播放第一次導覽教學影片
+		if(!this.state.flagFirstGuid && this.state.VideoISViewed==0 && this.state.flagNetwork){
+			
+			//目前正在第一次導覽
+			this.setState({flagFirstGuid: true,
+							closeMinor: IBINFO[0][MINOR],
+							VideoId:IBINFO[0][VIDEOID],
+							haveIB: true,
+							paused: false,
+							playEndedFlag: false,
+			});
+		}//end if
+	}//end judgeFirstGuid
+	
+	
+	
+	//音效設定
+	playSound(){
+		const HitSound = new Sound(sound_Hit ,Sound.MAIN_BUNDLE,(error)=>{
+			if(error){
+				console.log('error: ',error);
+			}else{
+				HitSound.setSpeed(1);
+				HitSound.play(()=>HitSound.release());
+			}
+		});
+	}//end playSound
+	
+	
+	
 	openScan(){
 		//撥放結束後重新開啟掃描功能
 		this.setState({haveIB: false});
 		//清除Timer
-		if(TIME_OPENSCAN!=null){clearTimeout(TIME_OPENSCAN);}
+		if(TIME_OPENSCAN!=null){
+			clearTimeout(TIME_OPENSCAN);
+			TIME_OPENSCAN = null;
+		}
 	}//end openScan
 	
 	
@@ -625,11 +590,56 @@ export default class MainFunction extends Component {
 	
 	
 	
+	//Scan 開關
+	scanButtonFunction(){
+		
+		_scanFlag = this.state.scanFlag;
+		
+		if(_scanFlag){
+			//關閉掃描
+			if(TIMER!=null){
+				clearInterval(TIMER);
+				TIMER = null;
+				_scanFlag = false;
+				Toast.showShortBottom("停止掃描iBeacons");
+			}//end if
+		}else{
+			if(this.state.flagNetwork){
+				if(TIMER==null){	
+					TIMER = setInterval( () => {this.mainFlowControl();}, CONFIG.FPS);
+					_scanFlag = true;
+					Toast.showShortBottom("開始掃描iBeacons");
+				}//end if
+			}else{
+				Toast.showShortBottom("Please open Network");
+			}//end if
+		}//end if
+		
+		if(this.state.scanFlag != _scanFlag){
+			this.setState({scanFlag: _scanFlag});
+		}//end if
+		
+	}//end scanButtonContainer
+	
+	
+	
+	
+	
 	//exit scan ibeacons
 	exitScan(){
+		
+		//Stop VIdeo Player
+		if(!this.state.paused){this.setState({paused: true});}
 
 		//釋放Timer
-		clearInterval(TIMER);
+		if(TIMER!=null){
+			clearInterval(TIMER);
+			TINER = null;
+		}
+		if(TIME_OPENSCAN!=null){
+			clearTimeout(TIME_OPENSCAN);
+			TIME_OPENSCAN = null;
+		}
 				
 		//Release Listener
 		BeaconsDidRange_Listener.remove();
@@ -654,8 +664,14 @@ export default class MainFunction extends Component {
 							<Text>Back</Text>
 						</View>
 				</TouchableOpacity>
+				
+				<TouchableOpacity style={  styles.scanButtonContainer } onPress={()=>{ this.scanButtonFunction(); }}>
+						<View>
+							<Text> {this.state.scanFlag ? "Scan" : "Stop"} </Text>
+						</View>
+				</TouchableOpacity>
 			
-				<Image source={Radar} style={ (this.state.paused&&!this.state.flagiBeaconConnect&&this.state.flagNetwork) ? styles.radar_show : styles.radar_hide } />
+				<Image source={ img_Radar } style={ (this.state.paused&&!this.state.flagiBeaconConnect&&this.state.scanFlag) ? styles.radar_show : styles.radar_hide } />
 				
 				<Text style={ (this.state.flagNetwork) ? styles.viewed_hit_hide : styles.viewed_hit_show }> 
 					請開啟網路{'\n'}
@@ -679,9 +695,9 @@ export default class MainFunction extends Component {
 						//播放完畢時，暫停撥放
 						if(event.state == 'ended'){
 							//讓目前IBeacon斷線
-							this.setState({paused: true, levelFlag: false, playEndedFlag: true, flagFirstGuid: false});
+							this.setState({paused: true, levelFlag: false, playEndedFlag: true, flagFirstGuid: false, flagiBeaconConnect: false});
 							//紀錄已撥放的影片數量
-							this.RecodViewedNumber();
+							this.recordViewedNumber();
 							//回復掃描功能
 							TIME_OPENSCAN = setTimeout(() => {this.openScan()}, CONFIG.OPENSCAN_TIME);
 						}//end if
@@ -696,6 +712,8 @@ export default class MainFunction extends Component {
 	//關閉APP時的處理
 	componentWillUnmount(){
 		this.exitScan();
+		//remove backbutton listener
+		BackAndroid.removeEventListener('hardwareBackPress', () => {});
 	}//end componentWillUnMount
 	
 }//end Class
@@ -728,9 +746,20 @@ const styles = StyleSheet.create({
 		//borderColor:'green',
 		//borderWidth:1,
 	},
+	scanButtonContainer:{
+		position: "absolute",
+		top: 10,
+		width: 50,
+		right: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
 	radar_show:{
-		width: 250,
-		height: 250,
+		position: "absolute",
+		bottom:0,
+		left: (deviceWidth/2) - (200/2),
+		width: 200,
+		height: 200,
 		resizeMode: 'contain',
 		opacity: 0.7,
 	},
