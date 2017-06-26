@@ -19,7 +19,9 @@
     "react-native-sensor-manager": "^0.1.10",
     "react-native-sound": "^0.9.0",
     "react-native-storage": "^0.1.5",
-    "react-native-youtube": "^0.8.0"
+    "react-native-youtube": "^0.8.0",
+    "react-redux": "^5.0.5",
+    "redux": "^3.6.0"
   },
   "devDependencies": {
     "babel-jest": "18.0.0",

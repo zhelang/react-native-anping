@@ -5,7 +5,7 @@ import {Actions} from 'react-native-router-flux';//Router API
 import RNFS from 'react-native-fs';//檔案寫入 API
 import Toast from "@remobile/react-native-toast";//Toast APi
 
-import Logo from '../drawable/logo.png';//引用圖片
+import Logo from '../../images/logo.png';//引用圖片
 const VIDEO_LIST_FILE = RNFS.DocumentDirectoryPath + '/vid_list.txt';//儲存檔案位置
 var {height: deviceHeight,width: deviceWidth} = Dimensions.get("window");//取得裝置螢幕大小
 const WELCOME_TIME = 3000;//開啟延遲時間
