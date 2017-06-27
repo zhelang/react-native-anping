@@ -105,7 +105,6 @@ export default class MainFunction extends Component {
 		this.getViewVideoInfo = this.getViewVideoInfo.bind(this);
 		this.setMAXScreenBrightness = this.setMAXScreenBrightness.bind(this); 
 
-		console.warn(JSON.stringify(this.props));
 	}//end constructor
 	
 	
@@ -172,21 +171,32 @@ export default class MainFunction extends Component {
 	
 	//更新加速器狀態
 	onAccelerometerUpdate(data){
+
+		/*Toast.showShortBottom("Play="+this.props.videoPlayer.flagPlay+
+							", ScanBeacons="+this.props.scanBeaconManager.flagScanBeacons+
+							", SignalBeaoncs="+this.props.scanBeaconManager.flagSignalBeacons+
+							", ConnectBeacon="+this.props.scanBeaconManager.flagConnectBeacon+
+							", Level="+this.props.levelPhone.flagLevel
+							);*/
 		
 		//掃描到IB則判斷水平
-		if(this.props.scanBeaconManager.flagSignalBeacon){
+		if(this.props.scanBeaconManager.flagSignalBeacons){
 			//連接Sate
 			let _levelFlag = false;
 			//手機水平時
 			if( ((data.x>=-CONFIG.ANGLE_ACC) && (data.y>=-CONFIG.ANGLE_ACC)&&(data.y<=CONFIG.ANGLE_ACC)) && (data.z>=CONFIG.ANGLE_ACC) ){
 				_levelFlag = true;
 			}//end if
+
 			//存回State
-			if(_levelFlag){
-				this.props.actions.levelPhone();
-			}else{
-				this.props.actions.verticalPhone();
-			}
+			if(_levelFlag!=this.props.levelPhone.flagLevel){
+				if(_levelFlag){
+					this.props.actions.levelPhone();
+				}else{
+					this.props.actions.verticalPhone();
+				}
+				Toast.showShortBottom("flagLevel="+this.props.levelPhone.flagLevel);
+			}//end if
 		}//end if
 		//console.warn('acc.x='+data.x+', acc.y='+data.y+', acc.z='+data.z+', levelFlag='+levelFlag);
 		
@@ -201,7 +211,7 @@ export default class MainFunction extends Component {
 		//console.warn('mainFlowControl');
 		
 		//目前已有連線的Ibeacons，則不再偵測Ibeacons
-		if(!this.props.scanBeaconManager.flagSignalBeacon){
+		if(!this.props.scanBeaconManager.flagSignalBeacons){
 			//Step_1:計數偵測到的IBeacons
 			this.countDectIBeacons();
 			
@@ -214,7 +224,6 @@ export default class MainFunction extends Component {
 		
 		//Step_4:judgment Disconnect
 		this.judgeDisconnect();
-	
 	}//end mainFlowControl
   
   
@@ -316,11 +325,13 @@ export default class MainFunction extends Component {
 				}//end if
 			}//end if
 			
-			if(_flagSignalBeacon){
-				this.props.actions.signalBeacons();
-			}else{
-				this.props.actions.notSignalBeacons();
-			}
+			if(_flagSignalBeacon!=this.props.scanBeaconManager.flagSignalBeacons){
+				if(_flagSignalBeacon){
+					this.props.actions.signalBeacons();
+				}else{
+					this.props.actions.notSignalBeacons();
+				}
+			}//end if
 			
 			//重設偵測次數計數器
 			resetDectCountCount = 0;
@@ -340,20 +351,22 @@ export default class MainFunction extends Component {
 	judgePlayVideo(){	
 		//連結state
 		const _flagConnectBeacon = this.props.scanBeaconManager.flagConnectBeacon;
-		const levelFlag = this.props.levelPhone.flagLevel;
-		const VideoId = this.state.VideoId;
+		const _levelFlag = this.props.levelPhone.flagLevel;
+		const _videoID = this.state.videoID;
 		let _flagPlay = false;
 			
-		if( !(this.props.videoPlayer.videoID===null) && _flagConnectBeacon && levelFlag ){
-			_flagPlay=false;
-		}else{
+		if( !( _videoID===null) && _flagConnectBeacon && _levelFlag ){
 			_flagPlay=true;
+		}else{
+			_flagPlay=false;
 		}//end if
 		
-		if(_flagPlay){
-			this.props.actions.playVideo(this.state.videoID);
-		}else{
-			this.props.actions.pausedVideo();
+		if(_flagPlay != this.props.videoPlayer.flagPlay){
+			if(_flagPlay){
+				this.props.actions.playVideo(this.state.videoID);
+			}else{
+				this.props.actions.pausedVideo();
+			}//end if
 		}//end if
 		
 	}//end judgePlayVideo
@@ -369,7 +382,7 @@ export default class MainFunction extends Component {
 		let counterDisconnect = this.state.counterDisconnect;
 		let _flagConnectBeacon = this.props.scanBeaconManager.flagConnectBeacon;
 		const _flagFirstGuid = this.state.flagFirstGuid;
-		const _flagSignalBeacon = this.props.scanBeaconManager.flagSignalBeacon;
+		const _flagSignalBeacon = this.props.scanBeaconManager.flagSignalBeacons;
 		
 		
 		//console.warn("haveIB="+haveIB);
@@ -394,11 +407,14 @@ export default class MainFunction extends Component {
 		}
 		
 		//回存計數器
-		if(_flagConnectBeacon){
-			this.props.actions.connectBeacon();
-		}else{
-			this.props.actions.disconnectBeacon();
-		}
+		if(_flagConnectBeacon!=this.props.scanBeaconManager.flagConnectBeacon){
+			if(_flagConnectBeacon){
+				this.props.actions.connectBeacon();
+			}else{
+				this.props.actions.disconnectBeacon();
+			}
+		}//end if
+		
 		this.setState({
 			counterDisconnect:counterDisconnect,
 		});
@@ -452,7 +468,7 @@ export default class MainFunction extends Component {
 	recordViewedNumber(){
 		
 		//連結state
-		NowVideoID = this.state.VideoId;
+		NowVideoID = this.state.videoID;
 		NowIBMinor = this.state.closeMinor;
 
 		//搜尋
@@ -461,7 +477,7 @@ export default class MainFunction extends Component {
 			if(IBINFO[i][MINOR]==NowIBMinor && IBINFO[i][VIDEOID]==NowVideoID && IBINFO[i][VIEWED]==false){
 
 				//已看過影片數量+1
-				this.setState({VideoISViewed: this.state.VideoISViewed += 1 ,});
+				this.setState({VideoISViewed: this.state.VideoISViewed += 1 ,vIdeoID: ''});
 
 				//紀錄已看過
 				IBINFO[i][VIEWED] = true;
@@ -559,7 +575,7 @@ export default class MainFunction extends Component {
 	playSound(){
 		const HitSound = new Sound(sound_Hit ,Sound.MAIN_BUNDLE,(error)=>{
 			if(error){
-				console.log('error: ',error);
+				console.log('playSound error: ',error);
 			}else{
 				HitSound.setSpeed(1);
 				HitSound.play(()=>HitSound.release());
@@ -675,7 +691,7 @@ export default class MainFunction extends Component {
 						</View>
 				</TouchableOpacity>
 			
-				<Image source={ img_Radar } style={ ( this.props.videoPlayer.flagPlay && !this.props.scanBeaconManager.flagConnectBeacon && this.props.scanBeaconManager.flagScanBeacons) ? styles.radar_show : styles.radar_hide } />
+				<Image source={ img_Radar } style={ ( !this.props.videoPlayer.flagPlay && !this.props.scanBeaconManager.flagConnectBeacon && this.props.scanBeaconManager.flagScanBeacons) ? styles.radar_show : styles.radar_hide } />
 				
 				<Text style={ (this.props.network.flagNetwork) ? styles.viewed_hit_hide : styles.viewed_hit_show }> 
 					請開啟網路{'\n'}
