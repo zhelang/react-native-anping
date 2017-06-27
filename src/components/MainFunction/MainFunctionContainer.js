@@ -195,7 +195,7 @@ export default class MainFunction extends Component {
 				}else{
 					this.props.actions.verticalPhone();
 				}
-				Toast.showShortBottom("flagLevel="+this.props.levelPhone.flagLevel);
+				//Toast.showShortBottom("flagLevel="+this.props.levelPhone.flagLevel);
 			}//end if
 		}//end if
 		//console.warn('acc.x='+data.x+', acc.y='+data.y+', acc.z='+data.z+', levelFlag='+levelFlag);
@@ -561,6 +561,7 @@ export default class MainFunction extends Component {
 			//目前正在第一次導覽
 			this.props.actions.playVideo( IBINFO[0][VIDEOID] );
 			this.props.actions.signalBeacons();
+			this.props.actions.connectBeacon();
 			this.setState({flagFirstGuid: true,
 							closeMinor: IBINFO[0][MINOR],
 							playEndedFlag: false,
