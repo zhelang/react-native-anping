@@ -66,16 +66,16 @@ export default class extends React.Component {
 			//此處可改成用Fetch網頁的JSON資料，增加彈性
 			let filePath =  VIDEO_LIST_FILE;
 			let vid_info = [
-                            {title:'海關緣起' , 'body':'' , vid:1 , unlocked:false , 'video_id': 'W0FodgQtRYI' , "major" : "10001" , "minor" : "1001"},
-                            {title:'長型辦事桌' , 'body':'' , vid:2 , unlocked:false , 'video_id': 'VixuvOP6f1g' , "major" : "10001" , "minor" : "1002"},
-                            {title:'外部屋頂' , 'body':'' , vid:3 , unlocked:false , 'video_id': 'N_Mc77T_LG0' , "major" : "10001" , "minor" : "1000"},
-                            {title:'內部天花板' , 'body':'' , vid:4 , unlocked:false , 'video_id': 'jFX83WI9y0E' , "major" : "10001" , "minor" : "1003"},
-                            {title:'廣播室' , 'body':'人員休息室' , vid:5 , unlocked:false , 'video_id': 'JXJgtAF-2QI' , "major" : "10001" , "minor" : "1004"},
-							{title:'報關室' , 'body':'' , vid:6 , unlocked:false , 'video_id': 'IjDaMvYsE4E' , "major" : "10001" , "minor" : "1005"},
-                            {title:'礙子' , 'body':'' , vid:7 , unlocked:false , 'video_id': 'khz1S5qEEus' , "major" : "10001" , "minor" : "1006"},
-                            {title:'編竹夾泥牆' , 'body':'' , vid:8 , unlocked:false , 'video_id': 'CpbCjoADc8U' , "major" : "10001" , "minor" : "1007"},
-							{title:'日式玻璃工坊' , 'body':'' , vid:9 , unlocked:false , 'video_id': 'iYr0taFGaag' , "major" : "10001" , "minor" : "1008"},
-							{title:'海關工作流程' , 'body':'機船進出、報關繳稅' , vid:10 , unlocked:false , 'video_id': '-j8lrgMWP2A' , "major" : "10001" , "minor" : "1009"},
+                            {title:'海關緣起' , 'body':'' , vid:1 , unlocked:false , 'video_id': '8HObwoUHtxk' , "major" : "10001" , "minor" : "1001"},
+                            {title:'長型辦事桌' , 'body':'' , vid:2 , unlocked:false , 'video_id': 'FsyX5f2yA44' , "major" : "10001" , "minor" : "1002"},
+                            {title:'外部屋頂' , 'body':'' , vid:3 , unlocked:false , 'video_id': '_nF07IS_GeY' , "major" : "10001" , "minor" : "1000"},
+                            {title:'內部天花板' , 'body':'' , vid:4 , unlocked:false , 'video_id': 'TM7h6yW_q1k' , "major" : "10001" , "minor" : "1003"},
+                            {title:'廣播室' , 'body':'人員休息室' , vid:5 , unlocked:false , 'video_id': 'SehDXmxeCJ4' , "major" : "10001" , "minor" : "1004"},
+							{title:'報關室' , 'body':'' , vid:6 , unlocked:false , 'video_id': 'E929ttxT4wc' , "major" : "10001" , "minor" : "1005"},
+                            {title:'礙子' , 'body':'' , vid:7 , unlocked:false , 'video_id': 'vWETvudRohc' , "major" : "10001" , "minor" : "1006"},
+                            {title:'編竹夾泥牆' , 'body':'' , vid:8 , unlocked:false , 'video_id': 'L2rQpjcRhEg' , "major" : "10001" , "minor" : "1007"},
+							{title:'日式玻璃窗戶' , 'body':'' , vid:9 , unlocked:false , 'video_id': 'v4E_qGvLmdI' , "major" : "10001" , "minor" : "1008"},
+							{title:'海關工作流程' , 'body':'機船進出、報關繳稅' , vid:10 , unlocked:false , 'video_id': 'RXDTTQe_AWc' , "major" : "10001" , "minor" : "1009"},
 			];
 			RNFS.writeFile(filePath , JSON.stringify(vid_info) , 'utf8').then((success)=>{console.log('File WRITTEN:'+filePath);}).catch((err)=>console.warn(err.message));                                                       
 			
